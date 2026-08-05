@@ -1,9 +1,15 @@
 import * as vscode from 'vscode';
 import { GitIntegrationService } from './git';
 import { ContextKeyController, SelectionCoordinator } from './selection';
-import { FileSystemService, WorktreeWatcher } from './filesystem';
+import { FileSystemService, WorktreeWatcher, RootBoundaryGuard } from './filesystem';
 import { WorktreeTreeProvider, describeActiveWorktree } from './tree';
-import { registerSelectWorktreeCommand, registerOpenCommand, registerRefreshCommand } from './commands';
+import {
+  registerSelectWorktreeCommand,
+  registerOpenCommand,
+  registerRefreshCommand,
+  registerNewFileCommand,
+  registerNewFolderCommand
+} from './commands';
 
 // #3: activationEvents includes "onStartupFinished" (package.json) — contributes.views.explorer's
 // own "when" clause can never trigger activation, since only this extension can set the context
@@ -53,6 +59,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // #6: open a file, and manually refresh the tree.
   context.subscriptions.push(registerOpenCommand());
   context.subscriptions.push(registerRefreshCommand(treeProvider));
+
+  // #8/#9: create files/folders through the shared RootBoundaryGuard.
+  const outputChannel = vscode.window.createOutputChannel('Worktree Explorer');
+  context.subscriptions.push(outputChannel);
+  const guard = new RootBoundaryGuard();
+  const newEntryDeps = { fileSystem, guard, selection: selectionCoordinator, treeProvider, outputChannel };
+  context.subscriptions.push(registerNewFileCommand(newEntryDeps));
+  context.subscriptions.push(registerNewFolderCommand(newEntryDeps));
 }
 
 export function deactivate(): void {

@@ -4,3 +4,5 @@
 export const SELECT_WORKTREE_COMMAND = 'worktreeExplorer.selectWorktree';
 export const OPEN_COMMAND = 'worktreeExplorer.open';
 export const REFRESH_COMMAND = 'worktreeExplorer.refresh';
+export const NEW_FILE_COMMAND = 'worktreeExplorer.newFile';
+export const NEW_FOLDER_COMMAND = 'worktreeExplorer.newFolder';

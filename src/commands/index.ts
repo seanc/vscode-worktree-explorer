@@ -4,4 +4,6 @@
 export { registerSelectWorktreeCommand } from './selectWorktree';
 export { registerOpenCommand } from './openFile';
 export { registerRefreshCommand } from './refresh';
-export { SELECT_WORKTREE_COMMAND, OPEN_COMMAND, REFRESH_COMMAND } from './constants';
+export { registerNewFileCommand, registerNewFolderCommand, createEntry } from './newEntry';
+export type { NewEntryDependencies, NewEntryKind } from './newEntry';
+export { SELECT_WORKTREE_COMMAND, OPEN_COMMAND, REFRESH_COMMAND, NEW_FILE_COMMAND, NEW_FOLDER_COMMAND } from './constants';

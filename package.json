@@ -50,6 +50,14 @@
       {
         "command": "worktreeExplorer.open",
         "title": "Worktree Explorer: Open File"
+      },
+      {
+        "command": "worktreeExplorer.newFile",
+        "title": "Worktree Explorer: New File"
+      },
+      {
+        "command": "worktreeExplorer.newFolder",
+        "title": "Worktree Explorer: New Folder"
       }
     ],
     "menus": {
@@ -63,6 +71,28 @@
           "command": "worktreeExplorer.refresh",
           "when": "view == worktreeExplorer.files",
           "group": "navigation@2"
+        },
+        {
+          "command": "worktreeExplorer.newFile",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "group": "2_creation@1"
+        },
+        {
+          "command": "worktreeExplorer.newFolder",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "group": "2_creation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "worktreeExplorer.newFile",
+          "when": "view == worktreeExplorer.files && viewItem == folder && isWorkspaceTrusted",
+          "group": "1_creation@1"
+        },
+        {
+          "command": "worktreeExplorer.newFolder",
+          "when": "view == worktreeExplorer.files && viewItem == folder && isWorkspaceTrusted",
+          "group": "1_creation@2"
         }
       ]
     },
