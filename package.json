@@ -58,6 +58,14 @@
       {
         "command": "worktreeExplorer.newFolder",
         "title": "Worktree Explorer: New Folder"
+      },
+      {
+        "command": "worktreeExplorer.rename",
+        "title": "Worktree Explorer: Rename"
+      },
+      {
+        "command": "worktreeExplorer.delete",
+        "title": "Worktree Explorer: Delete"
       }
     ],
     "menus": {
@@ -93,6 +101,16 @@
           "command": "worktreeExplorer.newFolder",
           "when": "view == worktreeExplorer.files && viewItem == folder && isWorkspaceTrusted",
           "group": "1_creation@2"
+        },
+        {
+          "command": "worktreeExplorer.rename",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "group": "2_modification@1"
+        },
+        {
+          "command": "worktreeExplorer.delete",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "group": "2_modification@2"
         }
       ]
     },
@@ -119,6 +137,16 @@
           "type": "boolean",
           "default": true,
           "description": "Open files from the Worktree Explorer view in preview mode."
+        },
+        "worktreeExplorer.confirmDelete": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ask for confirmation before deleting a file or folder."
+        },
+        "worktreeExplorer.useTrash": {
+          "type": "boolean",
+          "default": true,
+          "description": "Move deleted files and folders to the OS trash instead of deleting them permanently."
         }
       }
     }

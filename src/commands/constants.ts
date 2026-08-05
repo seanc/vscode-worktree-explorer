@@ -6,3 +6,5 @@ export const OPEN_COMMAND = 'worktreeExplorer.open';
 export const REFRESH_COMMAND = 'worktreeExplorer.refresh';
 export const NEW_FILE_COMMAND = 'worktreeExplorer.newFile';
 export const NEW_FOLDER_COMMAND = 'worktreeExplorer.newFolder';
+export const RENAME_COMMAND = 'worktreeExplorer.rename';
+export const DELETE_COMMAND = 'worktreeExplorer.delete';

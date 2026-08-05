@@ -57,4 +57,61 @@ suite('FileSystemService mutations', () => {
       (error: unknown) => error instanceof OperationError && error.reason === 'destinationExists'
     );
   });
+
+  test('FR-FILE-03: renames a file', async () => {
+    const source = vscode.Uri.file(path.join(root, 'old.txt'));
+    fs.writeFileSync(source.fsPath, 'content');
+    const destination = vscode.Uri.file(path.join(root, 'new.txt'));
+
+    await fileSystem.rename(source, destination);
+
+    assert.strictEqual(fs.existsSync(source.fsPath), false);
+    assert.strictEqual(fs.readFileSync(destination.fsPath, 'utf8'), 'content');
+  });
+
+  test('FR-FILE-03: rejects renaming onto a different existing file', async () => {
+    const source = vscode.Uri.file(path.join(root, 'source.txt'));
+    fs.writeFileSync(source.fsPath, 'source content');
+    const destination = vscode.Uri.file(path.join(root, 'destination.txt'));
+    fs.writeFileSync(destination.fsPath, 'destination content');
+
+    await assert.rejects(
+      () => fileSystem.rename(source, destination),
+      (error: unknown) => error instanceof OperationError && error.reason === 'destinationExists'
+    );
+    assert.strictEqual(fs.readFileSync(destination.fsPath, 'utf8'), 'destination content');
+  });
+
+  test('FR-FILE-03: a case-only rename succeeds where the filesystem permits it', async function () {
+    if (process.platform !== 'win32' && process.platform !== 'darwin') {
+      this.skip(); // case-sensitive filesystem: "Old.txt" -> "old.txt" is just a normal rename.
+    }
+    const source = vscode.Uri.file(path.join(root, 'CaseTest.txt'));
+    fs.writeFileSync(source.fsPath, 'content');
+    const destination = vscode.Uri.file(path.join(root, 'casetest.txt'));
+
+    await fileSystem.rename(source, destination);
+
+    const entries = fs.readdirSync(root);
+    assert.deepStrictEqual(entries, ['casetest.txt']);
+  });
+
+  test('FR-FILE-04: deletes a file (no trash, for deterministic CI behavior)', async () => {
+    const uri = vscode.Uri.file(path.join(root, 'to-delete.txt'));
+    fs.writeFileSync(uri.fsPath, 'x');
+
+    await fileSystem.delete(uri, { recursive: false, useTrash: false });
+
+    assert.strictEqual(fs.existsSync(uri.fsPath), false);
+  });
+
+  test('FR-FILE-04: recursively deletes a directory', async () => {
+    const dir = vscode.Uri.file(path.join(root, 'to-delete-dir'));
+    fs.mkdirSync(dir.fsPath);
+    fs.writeFileSync(path.join(dir.fsPath, 'child.txt'), 'x');
+
+    await fileSystem.delete(dir, { recursive: true, useTrash: false });
+
+    assert.strictEqual(fs.existsSync(dir.fsPath), false);
+  });
 });

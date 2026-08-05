@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { OperationError } from '../common/errors';
+import { pathsEqual } from '../common/paths';
 
 export interface FileSystemEntry {
   readonly uri: vscode.Uri;
@@ -13,6 +14,11 @@ export function isDirectory(type: vscode.FileType): boolean {
 
 export function isSymbolicLink(type: vscode.FileType): boolean {
   return (type & vscode.FileType.SymbolicLink) !== 0;
+}
+
+export interface DeleteOptions {
+  readonly recursive: boolean;
+  readonly useTrash: boolean;
 }
 
 /**
@@ -39,6 +45,24 @@ export class FileSystemService {
     await this.run(() => vscode.workspace.fs.createDirectory(uri));
   }
 
+  /**
+   * FR-FILE-03: renames/moves within the same parent. A case-only rename (e.g. "Readme.md" ->
+   * "README.md" on a case-insensitive filesystem) needs `overwrite: true` — otherwise VS Code
+   * sees the destination as "already existing" (it's the same file) and rejects it, even though
+   * PRD explicitly requires case-only rename to work where the filesystem permits it. Any other
+   * rename keeps `overwrite: false`, so a genuine collision with a *different* file is rejected.
+   */
+  async rename(source: vscode.Uri, destination: vscode.Uri): Promise<void> {
+    const caseOnlyRename = source.fsPath !== destination.fsPath && pathsEqual(source.fsPath, destination.fsPath);
+    await this.run(() => vscode.workspace.fs.rename(source, destination, { overwrite: caseOnlyRename }));
+  }
+
+  /** FR-FILE-04: deletes a file or (recursively) a directory, using the OS trash when
+   *  `options.useTrash` is true and the platform supports it. */
+  async delete(uri: vscode.Uri, options: DeleteOptions): Promise<void> {
+    await this.run(() => vscode.workspace.fs.delete(uri, options));
+  }
+
   private async rejectIfExists(uri: vscode.Uri): Promise<void> {
     try {
       await vscode.workspace.fs.stat(uri);
@@ -52,10 +76,20 @@ export class FileSystemService {
     try {
       return await operation();
     } catch (error) {
-      if (error instanceof vscode.FileSystemError && error.code === 'NoPermissions') {
-        throw new OperationError('permissionDenied');
-      }
-      throw error;
+      throw toOperationError(error);
     }
   }
+}
+
+function toOperationError(error: unknown): unknown {
+  if (!(error instanceof vscode.FileSystemError)) {
+    return error;
+  }
+  if (error.code === 'NoPermissions') {
+    return new OperationError('permissionDenied');
+  }
+  if (error.code === 'FileExists') {
+    return new OperationError('destinationExists');
+  }
+  return error;
 }

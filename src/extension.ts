@@ -8,7 +8,9 @@ import {
   registerOpenCommand,
   registerRefreshCommand,
   registerNewFileCommand,
-  registerNewFolderCommand
+  registerNewFolderCommand,
+  registerRenameCommand,
+  registerDeleteCommand
 } from './commands';
 
 // #3: activationEvents includes "onStartupFinished" (package.json) — contributes.views.explorer's
@@ -60,13 +62,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(registerOpenCommand());
   context.subscriptions.push(registerRefreshCommand(treeProvider));
 
-  // #8/#9: create files/folders through the shared RootBoundaryGuard.
+  // #8/#9/#10: create/rename/delete through the shared RootBoundaryGuard.
   const outputChannel = vscode.window.createOutputChannel('Worktree Explorer');
   context.subscriptions.push(outputChannel);
   const guard = new RootBoundaryGuard();
-  const newEntryDeps = { fileSystem, guard, selection: selectionCoordinator, treeProvider, outputChannel };
-  context.subscriptions.push(registerNewFileCommand(newEntryDeps));
-  context.subscriptions.push(registerNewFolderCommand(newEntryDeps));
+  const mutationDeps = { fileSystem, guard, selection: selectionCoordinator, treeProvider, outputChannel };
+  context.subscriptions.push(registerNewFileCommand(mutationDeps));
+  context.subscriptions.push(registerNewFolderCommand(mutationDeps));
+  context.subscriptions.push(registerRenameCommand(mutationDeps));
+  context.subscriptions.push(registerDeleteCommand(mutationDeps));
 }
 
 export function deactivate(): void {

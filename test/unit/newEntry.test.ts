@@ -3,20 +3,7 @@ import * as vscode from 'vscode';
 import { createEntry, type NewEntryDependencies } from '../../src/commands';
 import type { GuardContext, GuardResult } from '../../src/filesystem';
 import { OperationError } from '../../src/common';
-
-function fakeOutputChannel(): vscode.OutputChannel {
-  const lines: string[] = [];
-  return {
-    name: 'fake',
-    append: (value: string) => lines.push(value),
-    appendLine: (value: string) => lines.push(value),
-    replace: () => undefined,
-    clear: () => undefined,
-    show: () => undefined,
-    hide: () => undefined,
-    dispose: () => undefined
-  } as unknown as vscode.OutputChannel;
-}
+import { fakeOutputChannel } from './fixtures';
 
 function makeDeps(overrides: {
   resolveNewPath: (context: GuardContext, parentUri: vscode.Uri, name: string, generation: number) => GuardResult;

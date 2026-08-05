@@ -8,3 +8,17 @@ export function descriptor(path: string, isMain: boolean): WorktreeDescriptor {
   const displayName = path.split('/').filter(Boolean).pop() ?? path;
   return { repositoryRoot: uri, rootUri: uri, displayName, isMain, isDetached: false };
 }
+
+/** Minimal OutputChannel fake for tests that need reportUnexpectedError()'s target. */
+export function fakeOutputChannel(): vscode.OutputChannel {
+  return {
+    name: 'fake',
+    append: () => undefined,
+    appendLine: () => undefined,
+    replace: () => undefined,
+    clear: () => undefined,
+    show: () => undefined,
+    hide: () => undefined,
+    dispose: () => undefined
+  } as unknown as vscode.OutputChannel;
+}
