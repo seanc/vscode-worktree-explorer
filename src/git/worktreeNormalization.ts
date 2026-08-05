@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import type { Branch, RepositoryKind, RepositoryState, Worktree } from './gitExtensionApi';
 import type { WorktreeDescriptor } from '../common/types';
 import { basename } from '../common/format';
+import { pathsEqual } from '../common/paths';
 
 /**
  * The subset of a Git API Repository that normalization needs — narrower than the full
@@ -58,27 +59,12 @@ function findOwningRoot(
     if (candidate.kind !== 'repository') {
       continue;
     }
-    if (candidate.state.worktrees.some((worktree: Worktree) => samePath(worktree.path, targetPath))) {
+    // Discovery-time matching only, to associate a worktree with its owning repository;
+    // RootBoundaryGuard (#8) owns authoritative path comparison for mutations. The Git API can
+    // report worktree paths with forward slashes even on Windows — pathsEqual normalizes that.
+    if (candidate.state.worktrees.some((worktree: Worktree) => pathsEqual(worktree.path, targetPath))) {
       return candidate.rootUri;
     }
   }
   return undefined;
-}
-
-function samePath(a: string, b: string): boolean {
-  // Discovery-time matching only, to associate a worktree with its owning repository.
-  // RootBoundaryGuard (#8) owns authoritative path comparison for mutations.
-  // The Git API can report worktree paths with forward slashes even on Windows, so separators
-  // are normalized before the (platform-appropriate) case comparison.
-  if (process.platform === 'win32') {
-    return normalizeSeparators(a).toLowerCase() === normalizeSeparators(b).toLowerCase();
-  }
-  if (process.platform === 'darwin') {
-    return a.toLowerCase() === b.toLowerCase();
-  }
-  return a === b;
-}
-
-function normalizeSeparators(p: string): string {
-  return p.replace(/\\/g, '/');
 }

@@ -2,25 +2,9 @@ import * as vscode from 'vscode';
 import type { API, GitExtension, Repository } from './gitExtensionApi';
 import type { WorktreeDescriptor } from '../common/types';
 import { listWorktreeDescriptors } from './worktreeNormalization';
+import { pathsEqual } from '../common/paths';
 
 const GIT_EXTENSION_ID = 'vscode.git';
-
-// Discovery-time matching only (deciding whether a worktree is already open); RootBoundaryGuard
-// (#8) owns authoritative path comparison for mutations. Separators are normalized first: the Git
-// API can report worktree paths with forward slashes even on Windows.
-function samePath(a: string, b: string): boolean {
-  if (process.platform === 'win32') {
-    return normalizeSeparators(a).toLowerCase() === normalizeSeparators(b).toLowerCase();
-  }
-  if (process.platform === 'darwin') {
-    return a.toLowerCase() === b.toLowerCase();
-  }
-  return a === b;
-}
-
-function normalizeSeparators(p: string): string {
-  return p.replace(/\\/g, '/');
-}
 
 /**
  * The only component permitted to depend on the built-in Git extension's API (PRD §16.2, §17.1).
@@ -137,7 +121,7 @@ export class GitIntegrationService implements vscode.Disposable {
     const api = this.api;
     const openRoots = api.repositories.map((repository) => repository.rootUri.fsPath);
     for (const worktree of mainRepository.state.worktrees) {
-      if (worktree.main || openRoots.some((root) => samePath(root, worktree.path))) {
+      if (worktree.main || openRoots.some((root) => pathsEqual(root, worktree.path))) {
         continue;
       }
       void api.openRepository(vscode.Uri.file(worktree.path));

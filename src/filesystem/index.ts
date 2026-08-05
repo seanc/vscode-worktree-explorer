@@ -3,3 +3,5 @@
 export { FileSystemService, isDirectory, isSymbolicLink } from './fileSystemService';
 export type { FileSystemEntry } from './fileSystemService';
 export { WorktreeWatcher } from './worktreeWatcher';
+export { RootBoundaryGuard } from './rootBoundaryGuard';
+export type { GuardContext, GuardResult, GuardFailureReason } from './rootBoundaryGuard';
