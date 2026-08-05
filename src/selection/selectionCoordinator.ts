@@ -186,10 +186,18 @@ export class SelectionCoordinator implements vscode.Disposable {
   }
 
   private setActive(uri: vscode.Uri | undefined, source: ActiveSelectionSource | undefined): void {
-    const changed = (this.state.activeWorktreeUri?.toString() ?? undefined) !== (uri?.toString() ?? undefined);
+    const uriChanged = (this.state.activeWorktreeUri?.toString() ?? undefined) !== (uri?.toString() ?? undefined);
+    const sourceChanged = this.state.activeSource !== source;
+    if (!uriChanged && !sourceChanged) {
+      // Found while building #7: without this guard, every recompute that resolves to the same
+      // outcome (e.g. a worktrees-changed event that doesn't affect the winner) still fired
+      // onDidChangeSelection, which would needlessly dispose/recreate #7's watcher and force a
+      // full tree refresh on every no-op resolve.
+      return;
+    }
     this.state.activeWorktreeUri = uri;
     this.state.activeSource = source;
-    if (changed) {
+    if (uriChanged) {
       this.state.rootGeneration += 1;
     }
     this._onDidChangeSelection.fire(this.snapshot);

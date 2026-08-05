@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { GitIntegrationService } from './git';
 import { ContextKeyController, SelectionCoordinator } from './selection';
-import { FileSystemService } from './filesystem';
+import { FileSystemService, WorktreeWatcher } from './filesystem';
 import { WorktreeTreeProvider, describeActiveWorktree } from './tree';
 import { registerSelectWorktreeCommand, registerOpenCommand, registerRefreshCommand } from './commands';
 
@@ -32,9 +32,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   });
   context.subscriptions.push(treeView);
 
+  // #7: exactly one active-root watcher, disposed and replaced on every root switch, debounced
+  // and coalesced into a full-tree refresh (PRD §18 — affected-parent refresh is deferred to #15
+  // if profiling shows the full-tree refresh doesn't meet the external-refresh performance target).
+  const watcher = new WorktreeWatcher();
+  context.subscriptions.push(watcher);
+  context.subscriptions.push(watcher.onDidChange(() => treeProvider.refresh()));
+
   const updateTreeView = () => {
     const activeUri = selectionCoordinator.snapshot.activeWorktreeUri;
     treeProvider.setActiveRoot(activeUri);
+    watcher.setActiveRoot(activeUri);
     treeView.description = describeActiveWorktree(gitIntegration.listWorktrees(), activeUri);
   };
   updateTreeView();

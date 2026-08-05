@@ -2,3 +2,4 @@
 // RootBoundaryGuard (issue #8, PRD §11, §17.1, §20).
 export { FileSystemService, isDirectory, isSymbolicLink } from './fileSystemService';
 export type { FileSystemEntry } from './fileSystemService';
+export { WorktreeWatcher } from './worktreeWatcher';
