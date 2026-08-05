@@ -3,6 +3,7 @@ import { GitIntegrationService } from './git';
 import { ContextKeyController, SelectionCoordinator } from './selection';
 import { FileSystemService, WorktreeWatcher, RootBoundaryGuard } from './filesystem';
 import { WorktreeTreeProvider, describeActiveWorktree } from './tree';
+import { PersistenceService, isRestoreLastSelectionEnabled } from './persistence';
 import {
   registerSelectWorktreeCommand,
   registerOpenCommand,
@@ -28,11 +29,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   await gitIntegration.activate();
 
   // #4: SelectionCoordinator resolves the active worktree (PRD §15); ContextKeyController just
-  // reflects that resolution into the view's "when" context keys. Persistence-based restore()
-  // is wired by #12.
+  // reflects that resolution into the view's "when" context keys.
   const selectionCoordinator = new SelectionCoordinator(gitIntegration);
   context.subscriptions.push(selectionCoordinator);
   context.subscriptions.push(new ContextKeyController(gitIntegration, selectionCoordinator));
+
+  // #12: restore the last valid selection (PRD §15.4 step 4) when no live SCM selection already
+  // claimed the slot in the constructor call above. restore() is idempotent once activeSource is
+  // set, so retrying on every onDidChangeWorktrees event is safe and lets it succeed once
+  // discovery catches up to a worktree that was opened asynchronously (#3's finding) without
+  // risking a premature "invalid" verdict.
+  const persistence = new PersistenceService(context.workspaceState, gitIntegration, selectionCoordinator);
+  context.subscriptions.push(persistence);
+  const attemptRestore = () => {
+    const uriString = persistence.load()?.lastActiveWorktreeUri;
+    if (uriString && isRestoreLastSelectionEnabled()) {
+      selectionCoordinator.restore(vscode.Uri.parse(uriString));
+    }
+  };
+  attemptRestore();
+  context.subscriptions.push(gitIntegration.onDidChangeWorktrees(attemptRestore));
 
   // #6: read-only tree, rooted at the resolved active worktree. showCollapseAll gives the
   // "Collapse All" button (PRD §12/§13.1) — there is no public API to trigger that behavior from

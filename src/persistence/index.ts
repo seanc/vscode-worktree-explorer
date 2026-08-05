@@ -1,2 +1,2 @@
-// Owned by PersistenceService (issue #12, PRD §15.4, §17.1).
-export {};
+export { PersistenceService, isRestoreLastSelectionEnabled } from './persistenceService';
+export type { PersistedSelection, PersistenceGitSource } from './persistenceService';

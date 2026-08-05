@@ -171,6 +171,11 @@
     "configuration": {
       "title": "Worktree Explorer",
       "properties": {
+        "worktreeExplorer.restoreLastSelection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Restore the last valid worktree selection when no current linked-worktree SCM selection takes precedence."
+        },
         "worktreeExplorer.showHiddenFiles": {
           "type": "boolean",
           "default": true,
