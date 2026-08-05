@@ -14,5 +14,6 @@ esbuild.js
 .gitignore
 .vscodeignore
 .vscode-test.mjs
+.vscode-test.perf.mjs
 CLAUDE.md
 PROJECT_LIFECYCLE_PROMPTS.md

@@ -24,4 +24,9 @@ export default defineConfig([
     workspaceFolder: './test/fixtures/git-linked-worktree/main',
     mocha: { timeout: 30000 }
   }
+  // #15's perfTests config lives in .vscode-test.perf.mjs, a *separate* config file, not another
+  // entry in this array — `vscode-test` with no arguments runs every config in this file's
+  // default export, and perfTests' fixture (test/setup/createLargeFixture.js) is deliberately not
+  // part of `pretest`, so including it here would break a plain `npm test`/CI run. Run profiling
+  // via `npm run profile`, which points --config at the other file explicitly.
 ]);

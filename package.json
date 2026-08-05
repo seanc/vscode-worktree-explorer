@@ -221,6 +221,7 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest:fixtures": "node test/setup/createGitFixture.js",
     "pretest": "npm run pretest:fixtures && npm run compile-tests && npm run compile",
+    "profile": "node test/setup/createLargeFixture.js && npm run compile-tests && vscode-test --config .vscode-test.perf.mjs",
     "check-types": "tsc --noEmit",
     "lint": "eslint src test",
     "test": "vscode-test",
