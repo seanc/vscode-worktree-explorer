@@ -5,5 +5,6 @@ import type { WorktreeDescriptor } from '../../src/common/types';
  *  file, so it is excluded from suite discovery by the glob in .vscode-test.mjs. */
 export function descriptor(path: string, isMain: boolean): WorktreeDescriptor {
   const uri = vscode.Uri.file(path);
-  return { repositoryRoot: uri, rootUri: uri, displayName: path, isMain, isDetached: false };
+  const displayName = path.split('/').filter(Boolean).pop() ?? path;
+  return { repositoryRoot: uri, rootUri: uri, displayName, isMain, isDetached: false };
 }

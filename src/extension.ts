@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import { GitIntegrationService } from './git';
 import { ContextKeyController, SelectionCoordinator } from './selection';
-import { registerSelectWorktreeCommand } from './commands';
+import { FileSystemService } from './filesystem';
+import { WorktreeTreeProvider, describeActiveWorktree } from './tree';
+import { registerSelectWorktreeCommand, registerOpenCommand, registerRefreshCommand } from './commands';
 
 // #3: activationEvents includes "onStartupFinished" (package.json) — contributes.views.explorer's
 // own "when" clause can never trigger activation, since only this extension can set the context
@@ -18,8 +20,31 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(selectionCoordinator);
   context.subscriptions.push(new ContextKeyController(gitIntegration, selectionCoordinator));
 
+  // #6: read-only tree, rooted at the resolved active worktree. showCollapseAll gives the
+  // "Collapse All" button (PRD §12/§13.1) — there is no public API to trigger that behavior from
+  // a synthetic command instead (see src/commands/refresh.ts).
+  const fileSystem = new FileSystemService();
+  const treeProvider = new WorktreeTreeProvider(fileSystem);
+  treeProvider.setActiveRoot(selectionCoordinator.snapshot.activeWorktreeUri);
+  const treeView = vscode.window.createTreeView('worktreeExplorer.files', {
+    treeDataProvider: treeProvider,
+    showCollapseAll: true
+  });
+  context.subscriptions.push(treeView);
+
+  const updateTreeView = () => {
+    const activeUri = selectionCoordinator.snapshot.activeWorktreeUri;
+    treeProvider.setActiveRoot(activeUri);
+    treeView.description = describeActiveWorktree(gitIntegration.listWorktrees(), activeUri);
+  };
+  updateTreeView();
+  context.subscriptions.push(selectionCoordinator.onDidChangeSelection(updateTreeView));
+
   // #5: manual worktree selection via the Quick Pick.
   context.subscriptions.push(registerSelectWorktreeCommand(gitIntegration, selectionCoordinator));
+  // #6: open a file, and manually refresh the tree.
+  context.subscriptions.push(registerOpenCommand());
+  context.subscriptions.push(registerRefreshCommand(treeProvider));
 }
 
 export function deactivate(): void {

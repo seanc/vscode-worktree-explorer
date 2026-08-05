@@ -2,8 +2,7 @@ import * as vscode from 'vscode';
 import type { GitIntegrationService } from '../git';
 import type { SelectionCoordinator } from '../selection';
 import { showWorktreeQuickPick } from '../ui';
-
-export const SELECT_WORKTREE_COMMAND = 'worktreeExplorer.selectWorktree';
+import { SELECT_WORKTREE_COMMAND } from './constants';
 
 /** PRD §12 command table / §13.1 primary view-title action. */
 export function registerSelectWorktreeCommand(

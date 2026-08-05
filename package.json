@@ -39,7 +39,17 @@
     "commands": [
       {
         "command": "worktreeExplorer.selectWorktree",
-        "title": "Worktree Explorer: Select Worktree"
+        "title": "Worktree Explorer: Select Worktree",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "worktreeExplorer.refresh",
+        "title": "Worktree Explorer: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "worktreeExplorer.open",
+        "title": "Worktree Explorer: Open File"
       }
     ],
     "menus": {
@@ -47,9 +57,40 @@
         {
           "command": "worktreeExplorer.selectWorktree",
           "when": "view == worktreeExplorer.files",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "worktreeExplorer.refresh",
+          "when": "view == worktreeExplorer.files",
+          "group": "navigation@2"
         }
       ]
+    },
+    "configuration": {
+      "title": "Worktree Explorer",
+      "properties": {
+        "worktreeExplorer.showHiddenFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show hidden files and folders in the Worktree Explorer view."
+        },
+        "worktreeExplorer.sortOrder": {
+          "type": "string",
+          "enum": ["foldersFirst", "mixed", "filesFirst"],
+          "default": "foldersFirst",
+          "description": "How files and folders are ordered in the Worktree Explorer view."
+        },
+        "worktreeExplorer.exclude": {
+          "type": "object",
+          "default": { "**/.git": true, "**/node_modules": true },
+          "description": "Glob patterns (in the form \"**/name\") to hide from the Worktree Explorer view. Independent of the built-in Explorer's files.exclude."
+        },
+        "worktreeExplorer.openFilesInPreview": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open files from the Worktree Explorer view in preview mode."
+        }
+      }
     }
   },
   "scripts": {
