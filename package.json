@@ -35,6 +35,21 @@
           "when": "worktreeExplorer.visible"
         }
       ]
+    },
+    "commands": [
+      {
+        "command": "worktreeExplorer.selectWorktree",
+        "title": "Worktree Explorer: Select Worktree"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "worktreeExplorer.selectWorktree",
+          "when": "view == worktreeExplorer.files",
+          "group": "navigation"
+        }
+      ]
     }
   },
   "scripts": {

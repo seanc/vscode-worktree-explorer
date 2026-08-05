@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import type { Branch, RepositoryKind, RepositoryState, Worktree } from './gitExtensionApi';
 import type { WorktreeDescriptor } from '../common/types';
+import { basename } from '../common/format';
 
 /**
  * The subset of a Git API Repository that normalization needs — narrower than the full
@@ -80,9 +81,4 @@ function samePath(a: string, b: string): boolean {
 
 function normalizeSeparators(p: string): string {
   return p.replace(/\\/g, '/');
-}
-
-function basename(uri: vscode.Uri): string {
-  const segments = uri.path.split('/').filter(Boolean);
-  return segments[segments.length - 1] ?? uri.path;
 }
