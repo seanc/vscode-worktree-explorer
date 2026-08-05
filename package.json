@@ -1,0 +1,66 @@
+{
+  "name": "worktree-explorer",
+  "displayName": "Worktree Explorer",
+  "description": "Browse and edit a Git linked worktree from a secondary Explorer view, without adding it to your workspace.",
+  "version": "0.0.1",
+  "publisher": "worktree-explorer",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/worktree-explorer/worktree-explorer.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "git",
+    "worktree",
+    "explorer",
+    "tree view"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "worktreeExplorer.files",
+          "name": "Worktree Explorer",
+          "when": "worktreeExplorer.visible"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src test",
+    "test": "vscode-test",
+    "vsix": "vsce package"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/mocha": "^10.0.9",
+    "@types/node": "^20.17.6",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.15.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.15.0"
+  }
+}
