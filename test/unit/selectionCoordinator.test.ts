@@ -167,6 +167,49 @@ suite('SelectionCoordinator', () => {
     assert.strictEqual(coordinator.snapshot.activeWorktreeUri, undefined);
   });
 
+  test('§9.10/§25: onWorktreeRemoved fires with the URI of a worktree that disappears while active', () => {
+    const main = descriptor('/repo', true);
+    const linked = descriptor('/repo-wt', false);
+    git.setWorktrees([main, linked]);
+    coordinator = new SelectionCoordinator(git);
+    git.select(linked.rootUri);
+
+    const removed: string[] = [];
+    coordinator.onWorktreeRemoved((uri) => removed.push(uri.toString()));
+    git.setWorktrees([main]);
+
+    assert.deepStrictEqual(removed, [linked.rootUri.toString()]);
+  });
+
+  test('onWorktreeRemoved does not fire for an ordinary hide (main-only selected)', () => {
+    const main = descriptor('/repo', true);
+    const linked = descriptor('/repo-wt', false);
+    git.setWorktrees([main, linked]);
+    coordinator = new SelectionCoordinator(git);
+    git.select(linked.rootUri);
+
+    const removed: string[] = [];
+    coordinator.onWorktreeRemoved((uri) => removed.push(uri.toString()));
+    git.select(main.rootUri);
+
+    assert.deepStrictEqual(removed, []);
+  });
+
+  test('onWorktreeRemoved does not fire for a manual-override clear (still a valid worktree)', () => {
+    const main = descriptor('/repo', true);
+    const linked = descriptor('/repo-wt', false);
+    const other = descriptor('/repo-other-wt', false);
+    git.setWorktrees([main, linked, other]);
+    coordinator = new SelectionCoordinator(git);
+    coordinator.selectManually(linked.rootUri);
+
+    const removed: string[] = [];
+    coordinator.onWorktreeRemoved((uri) => removed.push(uri.toString()));
+    git.select(other.rootUri);
+
+    assert.deepStrictEqual(removed, []);
+  });
+
   test('root generation increments only when the active root actually changes', () => {
     const main = descriptor('/repo', true);
     const linked = descriptor('/repo-wt', false);

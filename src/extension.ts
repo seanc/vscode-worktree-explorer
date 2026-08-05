@@ -50,6 +50,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   attemptRestore();
   context.subscriptions.push(gitIntegration.onDidChangeWorktrees(attemptRestore));
 
+  // #13/§25 "Active worktree removed": notify once per removal (AC-14 already clears the state;
+  // this just tells the user why the view emptied out instead of leaving it unexplained).
+  context.subscriptions.push(
+    selectionCoordinator.onWorktreeRemoved(() => {
+      void vscode.window.showWarningMessage('The selected worktree no longer exists.');
+    })
+  );
+
   // #6: read-only tree, rooted at the resolved active worktree. showCollapseAll gives the
   // "Collapse All" button (PRD §12/§13.1) — there is no public API to trigger that behavior from
   // a synthetic command instead (see src/commands/refresh.ts).

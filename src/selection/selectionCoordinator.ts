@@ -48,6 +48,11 @@ export class SelectionCoordinator implements vscode.Disposable {
   /** Fires whenever the resolved active worktree, source, or root generation changes. */
   readonly onDidChangeSelection = this._onDidChangeSelection.event;
 
+  private readonly _onWorktreeRemoved = new vscode.EventEmitter<vscode.Uri>();
+  /** AC-14/§9.10/§25 "Active worktree removed": fires with the URI that was active immediately
+   *  before it stopped being discovered, so a listener can notify the user once. */
+  readonly onWorktreeRemoved = this._onWorktreeRemoved.event;
+
   constructor(private readonly gitIntegration: GitIntegrationSource) {
     this.disposables.push(
       gitIntegration.onDidChangeRepositorySelection(() => this.handleScmSelectionChanged()),
@@ -162,8 +167,12 @@ export class SelectionCoordinator implements vscode.Disposable {
       // view if no linked worktree remains selected").
     }
 
-    // Rule 5: an active root that no longer exists is cleared.
+    // Rule 5: an active root that no longer exists is cleared. Because rules 2-4 above only ever
+    // produce a candidateUri that's either undefined or a member of `linked` by construction, the
+    // only way this can trigger is when candidateUri is the *previous* active root, preserved by
+    // rule 4 — i.e. this is always specifically "the previously active worktree is gone" (AC-14).
     if (candidateUri && !linked.some((w) => w.rootUri.toString() === candidateUri!.toString())) {
+      this._onWorktreeRemoved.fire(candidateUri);
       candidateUri = undefined;
       candidateSource = undefined;
     }
@@ -206,5 +215,6 @@ export class SelectionCoordinator implements vscode.Disposable {
   dispose(): void {
     this.disposables.forEach((d) => d.dispose());
     this._onDidChangeSelection.dispose();
+    this._onWorktreeRemoved.dispose();
   }
 }
