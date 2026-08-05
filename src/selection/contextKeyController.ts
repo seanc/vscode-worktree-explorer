@@ -1,14 +1,10 @@
 import * as vscode from 'vscode';
 import type { GitIntegrationService } from '../git';
+import type { SelectionSnapshot } from './selectionCoordinator';
 
 export interface ContextKeyValues {
   gitAvailable: boolean;
   hasWorktrees: boolean;
-  /**
-   * Feasibility-quality only: true iff any linked worktree is currently SCM-selected. The full
-   * precedence/epoch/manual-override algorithm (PRD §15.3) is #4's job — this exists to prove the
-   * false→true transition can be observed and mapped to a context key at all.
-   */
   visible: boolean;
 }
 
@@ -18,33 +14,40 @@ export const CONTEXT_KEYS = {
   visible: 'worktreeExplorer.visible'
 } as const;
 
-/** Narrow surface ContextKeyController needs — kept Pick'd so the pure computation below is
- *  unit-testable against a fake without wiring a real GitIntegrationService/vscode.git. */
-type GitIntegrationSource = Pick<GitIntegrationService, 'isAvailable' | 'listWorktrees' | 'isRepositorySelected'>;
+type GitIntegrationSource = Pick<GitIntegrationService, 'isAvailable' | 'listWorktrees' | 'onDidChangeAvailability' | 'onDidChangeWorktrees'>;
+type SelectionSource = { readonly snapshot: SelectionSnapshot; readonly onDidChangeSelection: vscode.Event<SelectionSnapshot> };
+
+/** Only what the pure computation needs — narrower than the constructor's full source types so
+ *  tests for computeContextKeyValues don't have to stub unused event members. */
+type ContextKeyGitSource = Pick<GitIntegrationSource, 'isAvailable' | 'listWorktrees'>;
+type ContextKeySelectionSource = Pick<SelectionSource, 'snapshot'>;
 
 /** Pure computation, split out from the setContext side effect so it's unit-testable. */
-export function computeContextKeyValues(gitIntegration: GitIntegrationSource): ContextKeyValues {
+export function computeContextKeyValues(gitIntegration: ContextKeyGitSource, selection: ContextKeySelectionSource): ContextKeyValues {
   const gitAvailable = gitIntegration.isAvailable;
-  const linkedWorktrees = gitAvailable ? gitIntegration.listWorktrees().filter((w) => !w.isMain) : [];
-  const hasWorktrees = linkedWorktrees.length > 0;
-  const visible = linkedWorktrees.some((w) => gitIntegration.isRepositorySelected(w.rootUri));
+  const hasWorktrees = gitAvailable && gitIntegration.listWorktrees().some((w) => !w.isMain);
+  const visible = selection.snapshot.activeWorktreeUri !== undefined;
   return { gitAvailable, hasWorktrees, visible };
 }
 
 /**
- * Feasibility-quality spike (#3) proving SCM selection changes can be observed and mapped to the
- * context keys that gate contributes.views.explorer's "when" clause (PRD §14). Superseded by the
- * full SelectionCoordinator state machine in #4; AC-01/AC-02 are fully closed there.
+ * Sets the context keys that gate contributes.views.explorer's "when" clause (PRD §14) from
+ * GitIntegrationService (availability/discovery) and SelectionCoordinator (resolved active root).
+ * As of #4, `visible` reflects the full SS15.3 precedence algorithm rather than the #3 spike's
+ * naive "any linked worktree selected" check.
  */
 export class ContextKeyController implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
   private _values: ContextKeyValues = { gitAvailable: false, hasWorktrees: false, visible: false };
 
-  constructor(private readonly gitIntegration: GitIntegrationService) {
+  constructor(
+    private readonly gitIntegration: GitIntegrationSource,
+    private readonly selection: SelectionSource
+  ) {
     this.disposables.push(
       gitIntegration.onDidChangeAvailability(() => this.refresh()),
       gitIntegration.onDidChangeWorktrees(() => this.refresh()),
-      gitIntegration.onDidChangeRepositorySelection(() => this.refresh())
+      selection.onDidChangeSelection(() => this.refresh())
     );
     this.refresh();
   }
@@ -55,7 +58,7 @@ export class ContextKeyController implements vscode.Disposable {
   }
 
   private refresh(): void {
-    this._values = computeContextKeyValues(this.gitIntegration);
+    this._values = computeContextKeyValues(this.gitIntegration, this.selection);
     void vscode.commands.executeCommand('setContext', CONTEXT_KEYS.gitAvailable, this._values.gitAvailable);
     void vscode.commands.executeCommand('setContext', CONTEXT_KEYS.hasWorktrees, this._values.hasWorktrees);
     void vscode.commands.executeCommand('setContext', CONTEXT_KEYS.visible, this._values.visible);

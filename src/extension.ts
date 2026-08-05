@@ -1,18 +1,21 @@
 import * as vscode from 'vscode';
 import { GitIntegrationService } from './git';
-import { ContextKeyController } from './selection';
+import { ContextKeyController, SelectionCoordinator } from './selection';
 
-// #3: activationEvents now includes "onStartupFinished" (package.json). contributes.views.explorer
-// gates on "worktreeExplorer.visible", which only this extension can set — the view contribution
-// itself can never trigger activation (its "when" clause depends on a key nothing else would ever
-// flip), so an explicit startup activation event is required to break that chicken-and-egg cycle.
+// #3: activationEvents includes "onStartupFinished" (package.json) — contributes.views.explorer's
+// own "when" clause can never trigger activation, since only this extension can set the context
+// key it depends on.
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const gitIntegration = new GitIntegrationService();
   context.subscriptions.push(gitIntegration);
   await gitIntegration.activate();
 
-  // Feasibility-quality only (#3) — real behavior lands with SelectionCoordinator in #4.
-  context.subscriptions.push(new ContextKeyController(gitIntegration));
+  // #4: SelectionCoordinator resolves the active worktree (PRD §15); ContextKeyController just
+  // reflects that resolution into the view's "when" context keys. Persistence-based restore()
+  // and manual selectManually() hooks are wired by #12 and #5 respectively.
+  const selectionCoordinator = new SelectionCoordinator(gitIntegration);
+  context.subscriptions.push(selectionCoordinator);
+  context.subscriptions.push(new ContextKeyController(gitIntegration, selectionCoordinator));
 }
 
 export function deactivate(): void {
