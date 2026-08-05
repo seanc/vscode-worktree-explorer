@@ -25,11 +25,12 @@ suite('Live Git worktree discovery (#3 feasibility spike)', function () {
   suiteSetup(async () => {
     gitIntegration = new GitIntegrationService();
     await gitIntegration.activate();
-    // Wait for both the linked worktree to appear *and* its HEAD state to settle: opening a
-    // repository via the Git API returns before its status refresh (which populates HEAD) completes.
+    // Wait for the linked and detached worktrees to appear *and* their HEAD state to settle:
+    // opening a repository via the Git API returns before its status refresh (which populates
+    // HEAD) completes.
     await waitUntil(() => {
       const worktrees = gitIntegration.listWorktrees();
-      return worktrees.length >= 2 && worktrees.every((w) => w.ref !== undefined);
+      return worktrees.length >= 3 && worktrees.every((w) => w.ref !== undefined);
     }, 20000);
     selectionCoordinator = new SelectionCoordinator(gitIntegration);
     contextKeys = new ContextKeyController(gitIntegration, selectionCoordinator);
@@ -44,13 +45,22 @@ suite('Live Git worktree discovery (#3 feasibility spike)', function () {
   test('FR-001/FR-002/FR-003: discovers the main repository and its linked worktree live', () => {
     const worktrees = gitIntegration.listWorktrees();
     const main = worktrees.find((w) => w.isMain);
-    const linked = worktrees.find((w) => !w.isMain);
+    const linked = worktrees.find((w) => !w.isMain && w.ref === 'feature/x');
 
     assert.ok(main, 'main repository should be discovered');
     assert.ok(linked, 'linked worktree should be discovered');
     assert.strictEqual(linked!.repositoryRoot.fsPath, main!.rootUri.fsPath);
     assert.strictEqual(linked!.ref, 'feature/x');
     assert.strictEqual(linked!.isDetached, false);
+  });
+
+  test('§28.2 detached-worktree scenario: a detached worktree is discovered and flagged live', () => {
+    const worktrees = gitIntegration.listWorktrees();
+    const detached = worktrees.find((w) => !w.isMain && w.ref !== 'feature/x');
+
+    assert.ok(detached, 'detached worktree should be discovered');
+    assert.strictEqual(detached!.isDetached, true);
+    assert.ok(detached!.ref && /^[0-9a-f]{7,40}$/.test(detached!.ref), `expected a commit sha, got "${detached!.ref}"`);
   });
 
   test('context keys stay consistent with the live-resolved selection', () => {

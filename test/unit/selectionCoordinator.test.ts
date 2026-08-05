@@ -40,6 +40,16 @@ class FakeGitIntegration implements GitIntegrationSource {
     this.selectionEmitter.fire();
   }
 
+  /** Simulates several repositories becoming selected in the same transition batch (e.g. all
+   *  already selected at discovery time, with no prior epoch history) — a single event, not one
+   *  per URI, so a SelectionCoordinator observing it sees them all as "newly selected" together. */
+  selectMultiple(uris: vscode.Uri[]): void {
+    for (const uri of uris) {
+      this.selected.add(uri.toString());
+    }
+    this.selectionEmitter.fire();
+  }
+
   /** Simulates a repository's `ui.selected` becoming false (an SCM selection change event). */
   deselect(uri: vscode.Uri): void {
     this.selected.delete(uri.toString());
@@ -104,6 +114,27 @@ suite('SelectionCoordinator', () => {
     git.deselect(b.rootUri);
     git.select(b.rootUri);
     assert.strictEqual(coordinator.snapshot.activeWorktreeUri?.toString(), b.rootUri.toString());
+  });
+
+  test('§9.6 deterministic fallback: several worktrees selected together with no prior epoch history resolve the same way every time', () => {
+    const a = descriptor('/repo-a', false);
+    const b = descriptor('/repo-b', false);
+    const c = descriptor('/repo-c', false);
+    git.setWorktrees([descriptor('/repo', true), a, b, c]);
+    coordinator = new SelectionCoordinator(git);
+    // All three become selected in the *same* transition batch — none has prior selection
+    // history, so nothing but a deterministic tiebreak (Git API repository order, PRD §9.6 step 1)
+    // distinguishes them.
+    git.selectMultiple([a.rootUri, b.rootUri, c.rootUri]);
+    const firstResult = coordinator.snapshot.activeWorktreeUri?.toString();
+    assert.ok(firstResult, 'a winner should be resolved');
+    coordinator.dispose();
+
+    // A second, independent coordinator built against the identical (already-selected) fake state
+    // must resolve to the identical winner — proving the resolution has no hidden randomness
+    // (e.g. Map iteration order) and is reproducible.
+    coordinator = new SelectionCoordinator(git);
+    assert.strictEqual(coordinator.snapshot.activeWorktreeUri?.toString(), firstResult);
   });
 
   test('§9.7: main and a linked worktree selected together keeps the linked worktree visible', () => {

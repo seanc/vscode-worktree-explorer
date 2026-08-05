@@ -114,4 +114,22 @@ suite('FileSystemService mutations', () => {
 
     assert.strictEqual(fs.existsSync(dir.fsPath), false);
   });
+
+  test('§25 "Permission denied": a write blocked by filesystem permissions is translated (best effort)', async function () {
+    const readonlyDir = path.join(root, 'readonly-dir');
+    fs.mkdirSync(readonlyDir);
+    fs.chmodSync(readonlyDir, 0o444);
+    try {
+      await fileSystem.createFile(vscode.Uri.file(path.join(readonlyDir, 'new-file.txt')));
+      // The write succeeded despite the read-only mode — this environment doesn't enforce
+      // filesystem permissions the way this test expects (e.g. an elevated/administrator account
+      // on Windows, or a CI runner with broad rights), not a defect in our code. Skip rather than
+      // fail, the same honest-limitation pattern used for symlinks elsewhere in this suite.
+      this.skip();
+    } catch (error) {
+      assert.ok(error instanceof OperationError && error.reason === 'permissionDenied', `expected permissionDenied, got ${error}`);
+    } finally {
+      fs.chmodSync(readonlyDir, 0o755);
+    }
+  });
 });
