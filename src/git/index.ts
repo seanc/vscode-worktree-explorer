@@ -1,4 +1,4 @@
-// Owned by GitIntegrationService (issue #2, PRD §17.1). All built-in `vscode.git` extension API
-// usage must stay isolated behind this module (PRD §16.2) — no other component may import Git API
-// types directly.
-export {};
+// Public surface of the git module. Only GitIntegrationService and the plain WorktreeDescriptor
+// shape it produces may be imported by other modules — never the Git API types in
+// gitExtensionApi.ts (PRD §16.2).
+export { GitIntegrationService } from './gitIntegrationService';
