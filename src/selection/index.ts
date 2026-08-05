@@ -1,3 +1,4 @@
-// Owned by SelectionCoordinator (issue #4) and, earlier, the feasibility-quality
-// ContextKeyController from issue #3 (PRD §15, §17.1).
-export {};
+// Public surface of the selection module: the #3 feasibility-quality ContextKeyController today,
+// superseded by the production SelectionCoordinator in #4.
+export { ContextKeyController, computeContextKeyValues, CONTEXT_KEYS } from './contextKeyController';
+export type { ContextKeyValues } from './contextKeyController';

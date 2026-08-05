@@ -21,6 +21,7 @@ export interface API {
   readonly repositories: Repository[];
   readonly onDidOpenRepository: Event<Repository>;
   readonly onDidCloseRepository: Event<Repository>;
+  openRepository(root: Uri): Promise<Repository | null>;
 }
 
 export type RepositoryKind = 'repository' | 'submodule' | 'worktree';

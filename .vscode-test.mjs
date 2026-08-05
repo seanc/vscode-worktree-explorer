@@ -1,8 +1,11 @@
 import { defineConfig } from '@vscode/test-cli';
 
-// Both suites run through the real Extension Development Host (@vscode/test-cli). Standardizing on
-// one test toolchain for #1; splitting pure-logic unit tests into a lighter runner is a later
-// optimization if Electron-host startup cost becomes noticeable (see docs/issues/001-*.md).
+// Three suites, each with its own workspace folder:
+// - unitTests: pure logic, no fixture required.
+// - integrationTests: generic extension-lifecycle checks against the empty test/fixtures folder.
+// - gitDiscoveryTests: live checks against a real generated Git repo + linked worktree
+//   (test/setup/createGitFixture.js, run by `pretest`), isolated under test/integration/git/ so
+//   its glob doesn't overlap with integrationTests'.
 export default defineConfig([
   {
     label: 'unitTests',
@@ -11,8 +14,14 @@ export default defineConfig([
   },
   {
     label: 'integrationTests',
-    files: 'out/test/integration/**/*.test.js',
+    files: 'out/test/integration/*.test.js',
     workspaceFolder: './test/fixtures',
     mocha: { timeout: 20000 }
+  },
+  {
+    label: 'gitDiscoveryTests',
+    files: 'out/test/integration/git/**/*.test.js',
+    workspaceFolder: './test/fixtures/git-linked-worktree/main',
+    mocha: { timeout: 30000 }
   }
 ]);

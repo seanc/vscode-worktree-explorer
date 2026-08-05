@@ -23,6 +23,6 @@ module.exports = tseslint.config(
     }
   },
   {
-    ignores: ['dist/**', 'out/**', '.vscode-test/**', 'esbuild.js']
+    ignores: ['dist/**', 'out/**', '.vscode-test/**', 'esbuild.js', 'test/setup/**']
   }
 );

@@ -23,6 +23,9 @@
     "tree view"
   ],
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "views": {
       "explorer": [
@@ -43,7 +46,8 @@
     "package": "npm run check-types && npm run lint && node esbuild.js --production",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile",
+    "pretest:fixtures": "node test/setup/createGitFixture.js",
+    "pretest": "npm run pretest:fixtures && npm run compile-tests && npm run compile",
     "check-types": "tsc --noEmit",
     "lint": "eslint src test",
     "test": "vscode-test",

@@ -67,7 +67,19 @@ function findOwningRoot(
 function samePath(a: string, b: string): boolean {
   // Discovery-time matching only, to associate a worktree with its owning repository.
   // RootBoundaryGuard (#8) owns authoritative path comparison for mutations.
-  return process.platform === 'win32' || process.platform === 'darwin' ? a.toLowerCase() === b.toLowerCase() : a === b;
+  // The Git API can report worktree paths with forward slashes even on Windows, so separators
+  // are normalized before the (platform-appropriate) case comparison.
+  if (process.platform === 'win32') {
+    return normalizeSeparators(a).toLowerCase() === normalizeSeparators(b).toLowerCase();
+  }
+  if (process.platform === 'darwin') {
+    return a.toLowerCase() === b.toLowerCase();
+  }
+  return a === b;
+}
+
+function normalizeSeparators(p: string): string {
+  return p.replace(/\\/g, '/');
 }
 
 function basename(uri: vscode.Uri): string {

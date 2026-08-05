@@ -5,6 +5,23 @@ import { listWorktreeDescriptors } from './worktreeNormalization';
 
 const GIT_EXTENSION_ID = 'vscode.git';
 
+// Discovery-time matching only (deciding whether a worktree is already open); RootBoundaryGuard
+// (#8) owns authoritative path comparison for mutations. Separators are normalized first: the Git
+// API can report worktree paths with forward slashes even on Windows.
+function samePath(a: string, b: string): boolean {
+  if (process.platform === 'win32') {
+    return normalizeSeparators(a).toLowerCase() === normalizeSeparators(b).toLowerCase();
+  }
+  if (process.platform === 'darwin') {
+    return a.toLowerCase() === b.toLowerCase();
+  }
+  return a === b;
+}
+
+function normalizeSeparators(p: string): string {
+  return p.replace(/\\/g, '/');
+}
+
 /**
  * The only component permitted to depend on the built-in Git extension's API (PRD §16.2, §17.1).
  * Every other module consumes WorktreeDescriptor values and the vscode.Event streams below
@@ -92,8 +109,39 @@ export class GitIntegrationService implements vscode.Disposable {
     }
     this.repositoryDisposables.set(repository, [
       repository.ui.onDidChange(() => this._onDidChangeRepositorySelection.fire()),
-      repository.state.onDidChange(() => this._onDidChangeWorktrees.fire())
+      repository.state.onDidChange(() => {
+        this._onDidChangeWorktrees.fire();
+        if (repository.kind === 'repository') {
+          this.openMissingWorktrees(repository);
+        }
+      })
     ]);
+    if (repository.kind === 'repository') {
+      this.openMissingWorktrees(repository);
+    }
+  }
+
+  /**
+   * FR-001 finding (issue #3 spike): the built-in Git extension does not proactively open linked
+   * worktrees as their own Repository objects just because the main repository is open — a
+   * worktree only gets a `kind: 'worktree'` Repository (with SCM selection support) once
+   * something calls `openRepository` on its path. RepositoryState.worktrees only ever supplies
+   * inventory metadata. Explicitly open every worktree the main repository knows about that isn't
+   * open yet, so discovery matches the PRD's premise that linked worktrees appear in Source
+   * Control without manual action.
+   */
+  private openMissingWorktrees(mainRepository: Repository): void {
+    if (!this.api) {
+      return;
+    }
+    const api = this.api;
+    const openRoots = api.repositories.map((repository) => repository.rootUri.fsPath);
+    for (const worktree of mainRepository.state.worktrees) {
+      if (worktree.main || openRoots.some((root) => samePath(root, worktree.path))) {
+        continue;
+      }
+      void api.openRepository(vscode.Uri.file(worktree.path));
+    }
   }
 
   private untrackRepository(repository: Repository): void {
