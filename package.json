@@ -66,6 +66,30 @@
       {
         "command": "worktreeExplorer.delete",
         "title": "Worktree Explorer: Delete"
+      },
+      {
+        "command": "worktreeExplorer.copyRelativePath",
+        "title": "Worktree Explorer: Copy Relative Path"
+      },
+      {
+        "command": "worktreeExplorer.copyAbsolutePath",
+        "title": "Worktree Explorer: Copy Absolute Path"
+      },
+      {
+        "command": "worktreeExplorer.revealInOperatingSystem",
+        "title": "Worktree Explorer: Reveal in File Explorer"
+      },
+      {
+        "command": "worktreeExplorer.copyWorktreePath",
+        "title": "Worktree Explorer: Copy Worktree Path"
+      },
+      {
+        "command": "worktreeExplorer.revealWorktreeRoot",
+        "title": "Worktree Explorer: Reveal Worktree Root"
+      },
+      {
+        "command": "worktreeExplorer.openSettings",
+        "title": "Worktree Explorer: Extension Settings"
       }
     ],
     "menus": {
@@ -89,6 +113,21 @@
           "command": "worktreeExplorer.newFolder",
           "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
           "group": "2_creation@2"
+        },
+        {
+          "command": "worktreeExplorer.copyWorktreePath",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_worktree@1"
+        },
+        {
+          "command": "worktreeExplorer.revealWorktreeRoot",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_worktree@2"
+        },
+        {
+          "command": "worktreeExplorer.openSettings",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_worktree@3"
         }
       ],
       "view/item/context": [
@@ -111,6 +150,21 @@
           "command": "worktreeExplorer.delete",
           "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
           "group": "2_modification@2"
+        },
+        {
+          "command": "worktreeExplorer.copyRelativePath",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_paths@1"
+        },
+        {
+          "command": "worktreeExplorer.copyAbsolutePath",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_paths@2"
+        },
+        {
+          "command": "worktreeExplorer.revealInOperatingSystem",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_paths@3"
         }
       ]
     },

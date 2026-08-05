@@ -10,7 +10,13 @@ import {
   registerNewFileCommand,
   registerNewFolderCommand,
   registerRenameCommand,
-  registerDeleteCommand
+  registerDeleteCommand,
+  registerCopyRelativePathCommand,
+  registerCopyAbsolutePathCommand,
+  registerRevealInOperatingSystemCommand,
+  registerCopyWorktreePathCommand,
+  registerRevealWorktreeRootCommand,
+  registerOpenSettingsCommand
 } from './commands';
 
 // #3: activationEvents includes "onStartupFinished" (package.json) — contributes.views.explorer's
@@ -71,6 +77,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(registerNewFolderCommand(mutationDeps));
   context.subscriptions.push(registerRenameCommand(mutationDeps));
   context.subscriptions.push(registerDeleteCommand(mutationDeps));
+
+  // #11: path/OS utility commands (read-only — not gated by Workspace Trust).
+  const pathCommandDeps = { selection: selectionCoordinator };
+  context.subscriptions.push(registerCopyRelativePathCommand(pathCommandDeps));
+  context.subscriptions.push(registerCopyAbsolutePathCommand());
+  context.subscriptions.push(registerRevealInOperatingSystemCommand());
+  context.subscriptions.push(registerCopyWorktreePathCommand(pathCommandDeps));
+  context.subscriptions.push(registerRevealWorktreeRootCommand(pathCommandDeps));
+  context.subscriptions.push(registerOpenSettingsCommand());
 }
 
 export function deactivate(): void {
