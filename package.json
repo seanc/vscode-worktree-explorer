@@ -5,7 +5,6 @@
   "version": "0.1.0",
   "publisher": "bogdandobanda",
   "license": "MIT",
-  "private": true,
   "icon": "resources/icon.png",
   "repository": {
     "type": "git",
