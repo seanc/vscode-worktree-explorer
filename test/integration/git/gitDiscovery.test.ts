@@ -33,7 +33,7 @@ suite('Live Git worktree discovery (#3 feasibility spike)', function () {
       return worktrees.length >= 3 && worktrees.every((w) => w.ref !== undefined);
     }, 20000);
     selectionCoordinator = new SelectionCoordinator(gitIntegration);
-    contextKeys = new ContextKeyController(gitIntegration, selectionCoordinator);
+    contextKeys = new ContextKeyController(gitIntegration);
   });
 
   suiteTeardown(() => {
@@ -66,9 +66,12 @@ suite('Live Git worktree discovery (#3 feasibility spike)', function () {
   test('context keys stay consistent with the live-resolved selection', () => {
     const worktrees = gitIntegration.listWorktrees().filter((w) => !w.isMain);
     assert.strictEqual(contextKeys.values.hasWorktrees, worktrees.length > 0);
+    // `visible` tracks `hasWorktrees` directly — it's no longer tied to whether
+    // SelectionCoordinator has resolved an active root (the view stays shown and falls back to a
+    // worktree instead of hiding; see PRD §9.4).
+    assert.strictEqual(contextKeys.values.visible, contextKeys.values.hasWorktrees);
 
     const active = selectionCoordinator.snapshot.activeWorktreeUri;
-    assert.strictEqual(contextKeys.values.visible, active !== undefined);
     // If SelectionCoordinator resolved an active root from live SCM state, it must be one of the
     // discovered linked worktrees, not an arbitrary URI.
     if (active) {

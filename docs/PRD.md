@@ -219,7 +219,12 @@ Each item should show:
 
 When the SCM selection contains no linked worktree and resolves to the main repository:
 
-- hide the Worktree Explorer view;
+- keep the Worktree Explorer view visible whenever the project has any linked worktree
+  (`worktreeExplorer.hasWorktrees`), independent of the current SCM selection;
+- continue showing the worktree that was most recently active (via SCM, the manual picker, or a
+  restored session), instead of clearing the tree;
+- if no worktree has ever been active in this workspace, default to the first discovered linked
+  worktree rather than leave the tree empty;
 - keep valid persistence state internally;
 - do not clear the user’s previous worktree history unnecessarily.
 
@@ -256,7 +261,8 @@ When the main repository and one or more linked worktrees are selected:
 - keep the Worktree Explorer visible;
 - display the most recently selected linked worktree.
 
-The view disappears only when no linked worktree is selected and the current SCM state resolves to the main repository.
+The view stays visible whenever any linked worktree exists (§9.4); the tree keeps showing the most
+recently active worktree even after SCM selection moves away from every linked worktree.
 
 ### 9.8 Manual override
 
@@ -272,7 +278,8 @@ When SCM selection changes:
 
 - clear the manual override;
 - synchronize to the latest selected linked worktree;
-- hide the view if no linked worktree remains selected.
+- if no linked worktree remains selected, fall back to the worktree that was manually chosen
+  (§9.4) instead of clearing the tree.
 
 ### 9.9 No linked worktrees
 
@@ -290,7 +297,8 @@ If the active worktree disappears or is no longer reported by Git:
 - invalidate its root generation;
 - clear its nodes;
 - select another valid SCM-selected worktree when available;
-- otherwise hide the view;
+- otherwise, if any other linked worktree still exists, default to the first one discovered (§9.4/§15.4);
+- otherwise, no linked worktree exists at all, so the view hides (§9.9);
 - notify the user once.
 
 ### 9.11 Git extension unavailable
@@ -502,7 +510,7 @@ Overflow:
 |---|---|
 | `worktreeExplorer.gitAvailable` | Built-in Git integration is available |
 | `worktreeExplorer.hasWorktrees` | At least one linked worktree exists |
-| `worktreeExplorer.visible` | The custom view should be visible |
+| `worktreeExplorer.visible` | The custom view should be visible — equal to `hasWorktrees`; not tied to which worktree, if any, is currently active |
 | `worktreeExplorer.hasActiveRoot` | A valid worktree is active |
 | `worktreeExplorer.activeSource` | `scm`, `manual`, or `restored` |
 | `worktreeExplorer.itemType` | `file`, `folder`, `symlink`, or `root` |
@@ -552,6 +560,8 @@ interface SelectionState {
   scmSelected: Map<string, boolean>;
   lastSelectedEpoch: Map<string, number>;
   rootGeneration: number;
+  /** Most recently active worktree (any source); the §9.4 fallback target. */
+  lastKnownWorktreeUri?: vscode.Uri;
 }
 ```
 
@@ -570,8 +580,10 @@ For every repository UI change:
 
 1. A newly changed SCM selection clears manual override.
 2. If one or more linked worktrees are SCM-selected, use the selected worktree with the greatest epoch.
-3. If no linked worktree is selected and the main repository is selected, hide the view.
-4. If SCM selection is empty or ambiguous without a change event, preserve a valid manual/restored root according to settings.
+3. If no linked worktree is selected and there's no preserved root to keep showing (rule 1 just
+   cleared a manual override, or nothing has resolved yet this session), fall back to
+   `lastKnownWorktreeUri` when it's still a valid linked worktree.
+4. If SCM selection is empty or ambiguous without a change event, preserve a valid manual/restored/SCM root according to settings.
 5. If active root is invalid, clear it.
 
 ### 15.4 Persistence
@@ -590,7 +602,9 @@ On activation:
 2. inspect SCM selection;
 3. prefer current SCM-selected linked worktrees;
 4. otherwise restore the last valid selection when enabled;
-5. otherwise hide the view.
+5. otherwise, if any linked worktree exists, default to the first one discovered — the view is
+   visible whenever `hasWorktrees` is true, so it should never sit empty when a reasonable default
+   exists.
 
 ---
 

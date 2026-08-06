@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import type { GitIntegrationService } from '../git';
-import type { SelectionSnapshot } from './selectionCoordinator';
 
 export interface ContextKeyValues {
   gitAvailable: boolean;
@@ -15,39 +14,36 @@ export const CONTEXT_KEYS = {
 } as const;
 
 type GitIntegrationSource = Pick<GitIntegrationService, 'isAvailable' | 'listWorktrees' | 'onDidChangeAvailability' | 'onDidChangeWorktrees'>;
-type SelectionSource = { readonly snapshot: SelectionSnapshot; readonly onDidChangeSelection: vscode.Event<SelectionSnapshot> };
 
-/** Only what the pure computation needs — narrower than the constructor's full source types so
+/** Only what the pure computation needs — narrower than the constructor's full source type so
  *  tests for computeContextKeyValues don't have to stub unused event members. */
 type ContextKeyGitSource = Pick<GitIntegrationSource, 'isAvailable' | 'listWorktrees'>;
-type ContextKeySelectionSource = Pick<SelectionSource, 'snapshot'>;
 
 /** Pure computation, split out from the setContext side effect so it's unit-testable. */
-export function computeContextKeyValues(gitIntegration: ContextKeyGitSource, selection: ContextKeySelectionSource): ContextKeyValues {
+export function computeContextKeyValues(gitIntegration: ContextKeyGitSource): ContextKeyValues {
   const gitAvailable = gitIntegration.isAvailable;
   const hasWorktrees = gitAvailable && gitIntegration.listWorktrees().some((w) => !w.isMain);
-  const visible = selection.snapshot.activeWorktreeUri !== undefined;
+  // The view is visible whenever the project has any linked worktree, independent of which one (if
+  // any) is currently resolved as active - SelectionCoordinator.resolve() always falls back to
+  // showing the last-known or first worktree rather than leaving an active-but-empty view visible.
+  const visible = hasWorktrees;
   return { gitAvailable, hasWorktrees, visible };
 }
 
 /**
  * Sets the context keys that gate contributes.views.explorer's "when" clause (PRD §14) from
- * GitIntegrationService (availability/discovery) and SelectionCoordinator (resolved active root).
- * As of #4, `visible` reflects the full SS15.3 precedence algorithm rather than the #3 spike's
- * naive "any linked worktree selected" check.
+ * GitIntegrationService (availability/discovery). `visible` no longer depends on the resolved
+ * active worktree (SelectionCoordinator) — it tracks `hasWorktrees` only, so the view stays shown
+ * regardless of which worktree, if any, is currently selected.
  */
 export class ContextKeyController implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
   private _values: ContextKeyValues = { gitAvailable: false, hasWorktrees: false, visible: false };
 
-  constructor(
-    private readonly gitIntegration: GitIntegrationSource,
-    private readonly selection: SelectionSource
-  ) {
+  constructor(private readonly gitIntegration: GitIntegrationSource) {
     this.disposables.push(
       gitIntegration.onDidChangeAvailability(() => this.refresh()),
-      gitIntegration.onDidChangeWorktrees(() => this.refresh()),
-      selection.onDidChangeSelection(() => this.refresh())
+      gitIntegration.onDidChangeWorktrees(() => this.refresh())
     );
     this.refresh();
   }
@@ -58,7 +54,7 @@ export class ContextKeyController implements vscode.Disposable {
   }
 
   private refresh(): void {
-    this._values = computeContextKeyValues(this.gitIntegration, this.selection);
+    this._values = computeContextKeyValues(this.gitIntegration);
     void vscode.commands.executeCommand('setContext', CONTEXT_KEYS.gitAvailable, this._values.gitAvailable);
     void vscode.commands.executeCommand('setContext', CONTEXT_KEYS.hasWorktrees, this._values.hasWorktrees);
     void vscode.commands.executeCommand('setContext', CONTEXT_KEYS.visible, this._values.visible);

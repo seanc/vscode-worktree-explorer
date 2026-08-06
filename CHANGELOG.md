@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- The Worktree Explorer view now stays visible whenever the project has any linked worktree,
+  regardless of what's currently selected in Source Control. Selecting the main repository no
+  longer hides the view — it keeps showing the most recently active worktree (SCM, manual pick, or
+  restored session), defaulting to the first discovered worktree if none has been active yet.
+
 ## 0.1.0
 
 First feature-complete release of the MVP described in `docs/PRD.md`.

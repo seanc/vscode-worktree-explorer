@@ -32,7 +32,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // reflects that resolution into the view's "when" context keys.
   const selectionCoordinator = new SelectionCoordinator(gitIntegration);
   context.subscriptions.push(selectionCoordinator);
-  context.subscriptions.push(new ContextKeyController(gitIntegration, selectionCoordinator));
+  context.subscriptions.push(new ContextKeyController(gitIntegration));
 
   // #12: restore the last valid selection (PRD §15.4 step 4) when no live SCM selection already
   // claimed the slot in the constructor call above. restore() is idempotent once activeSource is
@@ -45,6 +45,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const uriString = persistence.load()?.lastActiveWorktreeUri;
     if (uriString && isRestoreLastSelectionEnabled()) {
       selectionCoordinator.restore(vscode.Uri.parse(uriString));
+    }
+    // Last resort: nothing else has claimed the active slot (no live SCM selection, nothing
+    // persisted, no worktree has ever been active this session) but the view is now always visible
+    // whenever worktrees exist (§14 hasWorktrees) - default to the first linked worktree instead of
+    // leaving it empty. restore() no-ops once activeSource is already set, so this never overrides
+    // a real selection above.
+    const firstLinked = gitIntegration.listWorktrees().find((w) => !w.isMain);
+    if (firstLinked) {
+      selectionCoordinator.restore(firstLinked.rootUri);
     }
   };
   attemptRestore();

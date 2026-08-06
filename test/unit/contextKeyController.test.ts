@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import type { SelectionSnapshot } from '../../src/selection/selectionCoordinator';
 import { computeContextKeyValues } from '../../src/selection';
 import { descriptor } from './fixtures';
 
@@ -12,36 +11,23 @@ function fakeGitIntegration(available: boolean, worktrees: ReturnType<typeof des
   return { isAvailable: available, listWorktrees: () => worktrees };
 }
 
-function fakeSelection(snapshot: Partial<SelectionSnapshot> = {}): { snapshot: SelectionSnapshot } {
-  return { snapshot: { activeWorktreeUri: undefined, activeSource: undefined, rootGeneration: 0, ...snapshot } };
-}
-
 suite('computeContextKeyValues', () => {
   test('Git unavailable: everything false (feeds AC-16)', () => {
-    const values = computeContextKeyValues(fakeGitIntegration(false, [descriptor('/repo-wt', false)]), fakeSelection());
+    const values = computeContextKeyValues(fakeGitIntegration(false, [descriptor('/repo-wt', false)]));
     assert.deepStrictEqual(values, { gitAvailable: false, hasWorktrees: false, visible: false });
   });
 
   test('AC-02: only the main repository present, nothing selectable as a worktree', () => {
     const main = descriptor('/repo', true);
-    const values = computeContextKeyValues(fakeGitIntegration(true, [main]), fakeSelection());
+    const values = computeContextKeyValues(fakeGitIntegration(true, [main]));
     assert.deepStrictEqual(values, { gitAvailable: true, hasWorktrees: false, visible: false });
   });
 
-  test('a linked worktree exists but SelectionCoordinator has not activated it: hidden', () => {
+  test('a linked worktree exists: visible regardless of what is currently active, since ' +
+    'SelectionCoordinator always falls back to showing one (last-known or first) rather than nothing', () => {
     const main = descriptor('/repo', true);
     const linked = descriptor('/repo-wt', false);
-    const values = computeContextKeyValues(fakeGitIntegration(true, [main, linked]), fakeSelection());
-    assert.deepStrictEqual(values, { gitAvailable: true, hasWorktrees: true, visible: false });
-  });
-
-  test('AC-01: SelectionCoordinator resolving an active worktree makes the view visible', () => {
-    const main = descriptor('/repo', true);
-    const linked = descriptor('/repo-wt', false);
-    const values = computeContextKeyValues(
-      fakeGitIntegration(true, [main, linked]),
-      fakeSelection({ activeWorktreeUri: linked.rootUri, activeSource: 'scm' })
-    );
+    const values = computeContextKeyValues(fakeGitIntegration(true, [main, linked]));
     assert.deepStrictEqual(values, { gitAvailable: true, hasWorktrees: true, visible: true });
   });
 });

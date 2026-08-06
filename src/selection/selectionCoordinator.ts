@@ -17,6 +17,10 @@ interface SelectionState {
   scmSelected: Map<string, boolean>;
   lastSelectedEpoch: Map<string, number>;
   rootGeneration: number;
+  /** Most recent worktree that was ever active (any source), kept even while the resolved
+   *  active worktree is currently undefined/preserved-elsewhere. Used as the fallback so
+   *  selecting the main repository shows the last worktree instead of hiding (see resolve()). */
+  lastKnownWorktreeUri: vscode.Uri | undefined;
 }
 
 export interface SelectionSnapshot {
@@ -47,7 +51,8 @@ export class SelectionCoordinator implements vscode.Disposable {
     selectionEpoch: 0,
     scmSelected: new Map(),
     lastSelectedEpoch: new Map(),
-    rootGeneration: 0
+    rootGeneration: 0,
+    lastKnownWorktreeUri: undefined
   };
 
   private readonly _onDidChangeSelection = new vscode.EventEmitter<SelectionSnapshot>();
@@ -168,21 +173,23 @@ export class SelectionCoordinator implements vscode.Disposable {
       });
       candidateUri = winner.rootUri;
       candidateSource = 'scm';
-    } else {
-      const mainSelected =
-        !options.ignoreScmSelection &&
-        this.gitIntegration.listWorktrees().some((w) => w.isMain && this.gitIntegration.isRepositorySelected(w.rootUri));
-      if (mainSelected) {
-        // Rule 3: no linked worktree selected and the main repository is selected -> hide.
-        candidateUri = undefined;
-        candidateSource = undefined;
+    } else if (candidateUri === undefined) {
+      // Rule 3 (revised): no linked worktree is live-selected (root selected, or ambiguous) and
+      // there's no preserved candidate to keep showing (rule 1 just cleared a manual override, or
+      // nothing has resolved yet) -> fall back to the most recently known worktree instead of
+      // hiding, so the view keeps showing something rather than going blank while it's visible.
+      const knownUri = this.state.lastKnownWorktreeUri;
+      if (knownUri && linked.some((w) => w.rootUri.toString() === knownUri.toString())) {
+        candidateUri = knownUri;
+        candidateSource = 'restored';
       }
-      // Rule 4 (else): SCM selection is empty/ambiguous. When this recompute was not itself an
-      // SCM change, candidateUri/candidateSource are already the preserved current values —
-      // nothing further to do. When it *was* an SCM change and the value was manual, rule 1
-      // already cleared it above and nothing here re-claims the slot, matching §9.8 ("hide the
-      // view if no linked worktree remains selected").
+      // else: genuinely nothing to fall back to yet (fresh workspace) - stays undefined; the
+      // extension's startup fallback (SelectionCoordinator#restore, see extension.ts) or a future
+      // SCM/manual selection will claim the slot.
     }
+    // Rule 4 (else, candidateUri already defined): SCM selection is empty/ambiguous but a worktree
+    // is already the preserved candidate (e.g. it was SCM-active before the user selected the main
+    // repository) -> keep showing it as-is.
 
     // Rule 5: an active root that no longer exists is cleared. Because rules 2-4 above only ever
     // produce a candidateUri that's either undefined or a member of `linked` by construction, the
@@ -209,9 +216,15 @@ export class SelectionCoordinator implements vscode.Disposable {
         this.state.scmSelected.delete(key);
       }
     }
+    if (this.state.lastKnownWorktreeUri && !validKeys.has(this.state.lastKnownWorktreeUri.toString())) {
+      this.state.lastKnownWorktreeUri = undefined;
+    }
   }
 
   private setActive(uri: vscode.Uri | undefined, source: ActiveSelectionSource | undefined): void {
+    if (uri) {
+      this.state.lastKnownWorktreeUri = uri;
+    }
     const uriChanged = (this.state.activeWorktreeUri?.toString() ?? undefined) !== (uri?.toString() ?? undefined);
     const sourceChanged = this.state.activeSource !== source;
     if (!uriChanged && !sourceChanged) {

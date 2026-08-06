@@ -86,7 +86,7 @@ suite('SelectionCoordinator', () => {
     assert.strictEqual(coordinator.snapshot.activeSource, 'scm');
   });
 
-  test('AC-02: selecting only the main repository hides the view', () => {
+  test('AC-02: selecting only the main repository with no prior history resolves to no active worktree', () => {
     const main = descriptor('/repo', true);
     const linked = descriptor('/repo-wt', false);
     git.setWorktrees([main, linked]);
@@ -94,8 +94,57 @@ suite('SelectionCoordinator', () => {
 
     git.select(main.rootUri);
 
+    // No worktree has ever been active in this session, so there's nothing to fall back to yet
+    // (the extension's startup restore()/first-worktree fallback, not SelectionCoordinator's own
+    // resolve(), is what claims the slot in that case — see extension.ts).
     assert.strictEqual(coordinator.snapshot.activeWorktreeUri, undefined);
     assert.strictEqual(coordinator.snapshot.activeSource, undefined);
+  });
+
+  test('selecting the main repository after a worktree was SCM-active keeps showing that worktree', () => {
+    const main = descriptor('/repo', true);
+    const linked = descriptor('/repo-wt', false);
+    git.setWorktrees([main, linked]);
+    coordinator = new SelectionCoordinator(git);
+
+    git.select(linked.rootUri);
+    assert.strictEqual(coordinator.snapshot.activeWorktreeUri?.toString(), linked.rootUri.toString());
+
+    git.deselect(linked.rootUri);
+    git.select(main.rootUri);
+
+    assert.strictEqual(coordinator.snapshot.activeWorktreeUri?.toString(), linked.rootUri.toString());
+  });
+
+  test('manual pick then selecting the main repository falls back to the manually-picked worktree', () => {
+    const main = descriptor('/repo', true);
+    const linked = descriptor('/repo-wt', false);
+    const other = descriptor('/repo-other-wt', false);
+    git.setWorktrees([main, linked, other]);
+    coordinator = new SelectionCoordinator(git);
+
+    coordinator.selectManually(linked.rootUri);
+    assert.strictEqual(coordinator.snapshot.activeSource, 'manual');
+
+    // A real SCM change clears the manual override (rule 1), but since nothing linked is now
+    // SCM-selected either, the manually-picked worktree is still the "last known" one and wins.
+    git.select(main.rootUri);
+
+    assert.strictEqual(coordinator.snapshot.activeWorktreeUri?.toString(), linked.rootUri.toString());
+    assert.strictEqual(coordinator.snapshot.activeSource, 'restored');
+  });
+
+  test('a removed worktree is not resurrected as the fallback after root is selected', () => {
+    const main = descriptor('/repo', true);
+    const linked = descriptor('/repo-wt', false);
+    git.setWorktrees([main, linked]);
+    coordinator = new SelectionCoordinator(git);
+
+    git.select(linked.rootUri);
+    git.deselect(linked.rootUri);
+    git.setWorktrees([main]); // the linked worktree disappears entirely
+
+    assert.strictEqual(coordinator.snapshot.activeWorktreeUri, undefined);
   });
 
   test('AC-03/§9.6: among multiple SCM-selected linked worktrees, the most recently selected wins', () => {
