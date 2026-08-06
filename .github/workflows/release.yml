@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # Re-run the full cross-platform suite as a release gate before packaging anything.
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run compile
+      - name: Test (Linux, headless)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm test
+      - name: Test
+        if: runner.os != 'Linux'
+        run: npm test
+
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx vsce package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: '*.vsix'
+      - name: Attach VSIX to the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '*.vsix'
+      # Publishing to the Marketplace requires a publisher access token
+      # (https://code.visualstudio.com/api/working-with-extensions/publishing-extension) stored as
+      # the VSCE_PAT repository secret, and package.json's "private": true removed (vsce refuses to
+      # publish a private package as a deliberate safety net) — both are left to whoever actually
+      # owns the Marketplace listing. This step no-ops until that's configured.
+      - name: Publish to the VS Code Marketplace
+        if: ${{ env.VSCE_PAT != '' }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx vsce publish --pat "$VSCE_PAT"

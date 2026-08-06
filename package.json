@@ -1,0 +1,254 @@
+{
+  "name": "worktree-explorer",
+  "displayName": "Worktree Explorer",
+  "description": "Browse and edit a Git linked worktree from a secondary Explorer view, without adding it to your workspace.",
+  "version": "0.1.0",
+  "publisher": "bogdandobanda",
+  "license": "MIT",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bogdandobanda/vscode-worktree-explorer.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "SCM Providers"
+  ],
+  "keywords": [
+    "git",
+    "worktree",
+    "explorer",
+    "tree view"
+  ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "worktreeExplorer.files",
+          "name": "Worktree Explorer",
+          "when": "worktreeExplorer.visible"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "worktreeExplorer.selectWorktree",
+        "title": "Worktree Explorer: Select Worktree",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "worktreeExplorer.refresh",
+        "title": "Worktree Explorer: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "worktreeExplorer.open",
+        "title": "Worktree Explorer: Open File"
+      },
+      {
+        "command": "worktreeExplorer.newFile",
+        "title": "Worktree Explorer: New File"
+      },
+      {
+        "command": "worktreeExplorer.newFolder",
+        "title": "Worktree Explorer: New Folder"
+      },
+      {
+        "command": "worktreeExplorer.rename",
+        "title": "Worktree Explorer: Rename"
+      },
+      {
+        "command": "worktreeExplorer.delete",
+        "title": "Worktree Explorer: Delete"
+      },
+      {
+        "command": "worktreeExplorer.copyRelativePath",
+        "title": "Worktree Explorer: Copy Relative Path"
+      },
+      {
+        "command": "worktreeExplorer.copyAbsolutePath",
+        "title": "Worktree Explorer: Copy Absolute Path"
+      },
+      {
+        "command": "worktreeExplorer.revealInOperatingSystem",
+        "title": "Worktree Explorer: Reveal in File Explorer"
+      },
+      {
+        "command": "worktreeExplorer.copyWorktreePath",
+        "title": "Worktree Explorer: Copy Worktree Path"
+      },
+      {
+        "command": "worktreeExplorer.revealWorktreeRoot",
+        "title": "Worktree Explorer: Reveal Worktree Root"
+      },
+      {
+        "command": "worktreeExplorer.openSettings",
+        "title": "Worktree Explorer: Extension Settings"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "worktreeExplorer.selectWorktree",
+          "when": "view == worktreeExplorer.files",
+          "group": "navigation@1"
+        },
+        {
+          "command": "worktreeExplorer.refresh",
+          "when": "view == worktreeExplorer.files",
+          "group": "navigation@2"
+        },
+        {
+          "command": "worktreeExplorer.newFile",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "group": "2_creation@1"
+        },
+        {
+          "command": "worktreeExplorer.newFolder",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "group": "2_creation@2"
+        },
+        {
+          "command": "worktreeExplorer.copyWorktreePath",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_worktree@1"
+        },
+        {
+          "command": "worktreeExplorer.revealWorktreeRoot",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_worktree@2"
+        },
+        {
+          "command": "worktreeExplorer.openSettings",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_worktree@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "worktreeExplorer.newFile",
+          "when": "view == worktreeExplorer.files && viewItem == folder && isWorkspaceTrusted",
+          "group": "1_creation@1"
+        },
+        {
+          "command": "worktreeExplorer.newFolder",
+          "when": "view == worktreeExplorer.files && viewItem == folder && isWorkspaceTrusted",
+          "group": "1_creation@2"
+        },
+        {
+          "command": "worktreeExplorer.rename",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "group": "2_modification@1"
+        },
+        {
+          "command": "worktreeExplorer.delete",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "group": "2_modification@2"
+        },
+        {
+          "command": "worktreeExplorer.copyRelativePath",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_paths@1"
+        },
+        {
+          "command": "worktreeExplorer.copyAbsolutePath",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_paths@2"
+        },
+        {
+          "command": "worktreeExplorer.revealInOperatingSystem",
+          "when": "view == worktreeExplorer.files",
+          "group": "3_paths@3"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Worktree Explorer",
+      "properties": {
+        "worktreeExplorer.followScmSelection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Follow the linked worktree selected in Source Control. When disabled, the active worktree only changes via manual selection or the restored selection."
+        },
+        "worktreeExplorer.restoreLastSelection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Restore the last valid worktree selection when no current linked-worktree SCM selection takes precedence."
+        },
+        "worktreeExplorer.showHiddenFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show hidden files and folders in the Worktree Explorer view."
+        },
+        "worktreeExplorer.sortOrder": {
+          "type": "string",
+          "enum": ["foldersFirst", "mixed", "filesFirst"],
+          "default": "foldersFirst",
+          "description": "How files and folders are ordered in the Worktree Explorer view."
+        },
+        "worktreeExplorer.exclude": {
+          "type": "object",
+          "default": { "**/.git": true, "**/node_modules": true },
+          "description": "Glob patterns (in the form \"**/name\") to hide from the Worktree Explorer view. Independent of the built-in Explorer's files.exclude."
+        },
+        "worktreeExplorer.openFilesInPreview": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open files from the Worktree Explorer view in preview mode."
+        },
+        "worktreeExplorer.confirmDelete": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ask for confirmation before deleting a file or folder."
+        },
+        "worktreeExplorer.useTrash": {
+          "type": "boolean",
+          "default": true,
+          "description": "Move deleted files and folders to the OS trash instead of deleting them permanently."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest:fixtures": "node test/setup/createGitFixture.js",
+    "pretest": "npm run pretest:fixtures && npm run compile-tests && npm run compile",
+    "profile": "node test/setup/createLargeFixture.js && npm run compile-tests && vscode-test --config .vscode-test.perf.mjs",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src test",
+    "test": "vscode-test",
+    "vsix": "vsce package"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/mocha": "^10.0.9",
+    "@types/node": "^20.17.6",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.15.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.15.0"
+  }
+}

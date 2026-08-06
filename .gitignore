@@ -1,0 +1,8 @@
+node_modules/
+dist/
+out/
+*.vsix
+.vscode-test/
+*.tsbuildinfo
+test/fixtures/git-linked-worktree/
+test/fixtures/large-tree/

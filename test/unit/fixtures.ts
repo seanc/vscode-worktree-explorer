@@ -1,0 +1,24 @@
+import * as vscode from 'vscode';
+import type { WorktreeDescriptor } from '../../src/common/types';
+
+/** Shared test helper: a minimal WorktreeDescriptor for a given path. Not itself a "*.test.ts"
+ *  file, so it is excluded from suite discovery by the glob in .vscode-test.mjs. */
+export function descriptor(path: string, isMain: boolean): WorktreeDescriptor {
+  const uri = vscode.Uri.file(path);
+  const displayName = path.split('/').filter(Boolean).pop() ?? path;
+  return { repositoryRoot: uri, rootUri: uri, displayName, isMain, isDetached: false };
+}
+
+/** Minimal OutputChannel fake for tests that need reportUnexpectedError()'s target. */
+export function fakeOutputChannel(): vscode.OutputChannel {
+  return {
+    name: 'fake',
+    append: () => undefined,
+    appendLine: () => undefined,
+    replace: () => undefined,
+    clear: () => undefined,
+    show: () => undefined,
+    hide: () => undefined,
+    dispose: () => undefined
+  } as unknown as vscode.OutputChannel;
+}
