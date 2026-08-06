@@ -3,12 +3,13 @@
   "displayName": "Worktree Explorer",
   "description": "Browse and edit a Git linked worktree from a secondary Explorer view, without adding it to your workspace.",
   "version": "0.1.0",
-  "publisher": "worktree-explorer",
+  "publisher": "bogdandobanda",
   "license": "MIT",
   "private": true,
+  "icon": "resources/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/worktree-explorer/worktree-explorer.git"
+    "url": "https://github.com/bogdandobanda/vscode-worktree-explorer.git"
   },
   "engines": {
     "vscode": "^1.85.0"
