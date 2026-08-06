@@ -4,6 +4,12 @@ import type { WorktreeDescriptor } from '../common/types';
 
 export type ActiveSelectionSource = 'scm' | 'manual' | 'restored';
 
+/** PRD §19.1: "When false: SCM selection does not switch the tree; selection is manual/restored
+ *  only; invalid active roots are still cleared." Default true. */
+export function isFollowScmSelectionEnabled(): boolean {
+  return vscode.workspace.getConfiguration('worktreeExplorer').get<boolean>('followScmSelection', true);
+}
+
 interface SelectionState {
   activeWorktreeUri: vscode.Uri | undefined;
   activeSource: ActiveSelectionSource | undefined;
@@ -120,6 +126,15 @@ export class SelectionCoordinator implements vscode.Disposable {
     }
     this.state.scmSelected = currentlySelected;
 
+    if (!isFollowScmSelectionEnabled()) {
+      // PRD §19.1: "SCM selection does not switch the tree; selection is manual/restored only;
+      // invalid active roots are still cleared." Epoch bookkeeping above still runs (harmless,
+      // and picks back up correctly if the setting is re-enabled later) — only resolution itself
+      // ignores live SCM state.
+      this.resolve(linked, { clearManualFirst: false, ignoreScmSelection: true });
+      return;
+    }
+
     this.resolve(linked, { clearManualFirst: true });
   }
 
@@ -131,7 +146,7 @@ export class SelectionCoordinator implements vscode.Disposable {
   }
 
   /** PRD §15.3, applied as one ordered pass so every recompute goes through the same rules. */
-  private resolve(linked: WorktreeDescriptor[], options: { clearManualFirst: boolean }): void {
+  private resolve(linked: WorktreeDescriptor[], options: { clearManualFirst: boolean; ignoreScmSelection?: boolean }): void {
     let candidateUri = this.state.activeWorktreeUri;
     let candidateSource = this.state.activeSource;
 
@@ -141,7 +156,9 @@ export class SelectionCoordinator implements vscode.Disposable {
       candidateSource = undefined;
     }
 
-    const selectedLinked = linked.filter((w) => this.gitIntegration.isRepositorySelected(w.rootUri));
+    // §19.1 followScmSelection=false: live SCM state never drives resolution (rules 2/3 both
+    // become no-ops below); manual/restored selections and rule 5's validity check still apply.
+    const selectedLinked = options.ignoreScmSelection ? [] : linked.filter((w) => this.gitIntegration.isRepositorySelected(w.rootUri));
     if (selectedLinked.length > 0) {
       // Rule 2: one or more linked worktrees selected -> the greatest epoch wins.
       const winner = selectedLinked.reduce((best, candidate) => {
@@ -152,9 +169,9 @@ export class SelectionCoordinator implements vscode.Disposable {
       candidateUri = winner.rootUri;
       candidateSource = 'scm';
     } else {
-      const mainSelected = this.gitIntegration
-        .listWorktrees()
-        .some((w) => w.isMain && this.gitIntegration.isRepositorySelected(w.rootUri));
+      const mainSelected =
+        !options.ignoreScmSelection &&
+        this.gitIntegration.listWorktrees().some((w) => w.isMain && this.gitIntegration.isRepositorySelected(w.rootUri));
       if (mainSelected) {
         // Rule 3: no linked worktree selected and the main repository is selected -> hide.
         candidateUri = undefined;

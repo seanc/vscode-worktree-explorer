@@ -2,7 +2,7 @@
   "name": "worktree-explorer",
   "displayName": "Worktree Explorer",
   "description": "Browse and edit a Git linked worktree from a secondary Explorer view, without adding it to your workspace.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "worktree-explorer",
   "license": "MIT",
   "private": true,
@@ -14,7 +14,8 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "SCM Providers"
   ],
   "keywords": [
     "git",
@@ -22,6 +23,10 @@
     "explorer",
     "tree view"
   ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "main": "./dist/extension.js",
   "activationEvents": [
     "onStartupFinished"
@@ -171,6 +176,11 @@
     "configuration": {
       "title": "Worktree Explorer",
       "properties": {
+        "worktreeExplorer.followScmSelection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Follow the linked worktree selected in Source Control. When disabled, the active worktree only changes via manual selection or the restored selection."
+        },
         "worktreeExplorer.restoreLastSelection": {
           "type": "boolean",
           "default": true,

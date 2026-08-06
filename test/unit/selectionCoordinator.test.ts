@@ -306,3 +306,53 @@ suite('SelectionCoordinator', () => {
     assert.strictEqual(coordinator.snapshot.activeWorktreeUri, undefined);
   });
 });
+
+suite('SelectionCoordinator followScmSelection=false (PRD §19.1)', () => {
+  let git: FakeGitIntegration;
+  let coordinator: SelectionCoordinator;
+
+  setup(async () => {
+    git = new FakeGitIntegration();
+    await vscode.workspace.getConfiguration('worktreeExplorer').update('followScmSelection', false, vscode.ConfigurationTarget.Global);
+  });
+
+  teardown(async () => {
+    coordinator?.dispose();
+    await vscode.workspace.getConfiguration('worktreeExplorer').update('followScmSelection', undefined, vscode.ConfigurationTarget.Global);
+  });
+
+  test('live SCM selection does not switch the tree', () => {
+    const main = descriptor('/repo', true);
+    const linked = descriptor('/repo-wt', false);
+    git.setWorktrees([main, linked]);
+    coordinator = new SelectionCoordinator(git);
+
+    git.select(linked.rootUri);
+
+    assert.strictEqual(coordinator.snapshot.activeWorktreeUri, undefined);
+  });
+
+  test('manual selection still works', () => {
+    const main = descriptor('/repo', true);
+    const linked = descriptor('/repo-wt', false);
+    git.setWorktrees([main, linked]);
+    coordinator = new SelectionCoordinator(git);
+
+    coordinator.selectManually(linked.rootUri);
+
+    assert.strictEqual(coordinator.snapshot.activeWorktreeUri?.toString(), linked.rootUri.toString());
+    assert.strictEqual(coordinator.snapshot.activeSource, 'manual');
+  });
+
+  test('an invalid active root is still cleared even though SCM is ignored', () => {
+    const main = descriptor('/repo', true);
+    const linked = descriptor('/repo-wt', false);
+    git.setWorktrees([main, linked]);
+    coordinator = new SelectionCoordinator(git);
+    coordinator.selectManually(linked.rootUri);
+
+    git.setWorktrees([main]);
+
+    assert.strictEqual(coordinator.snapshot.activeWorktreeUri, undefined);
+  });
+});
