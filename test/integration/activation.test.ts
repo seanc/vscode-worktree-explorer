@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 // runtime even though the build succeeds).
 suite('Extension activation', () => {
   test('extension is present and activates without throwing', async () => {
-    const extension = vscode.extensions.getExtension('worktree-explorer.worktree-explorer');
+    const extension = vscode.extensions.getExtension('seanc-local.worktree-explorer');
     assert.ok(extension, 'Extension should be discoverable by its id');
     await extension!.activate();
     assert.strictEqual(extension!.isActive, true);

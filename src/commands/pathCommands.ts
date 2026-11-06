@@ -13,7 +13,7 @@ import {
 
 // Matches package.json's publisher.name — the argument workbench.action.openSettings expects to
 // filter its search box to just this extension's settings.
-const EXTENSION_ID = 'worktree-explorer.worktree-explorer';
+const EXTENSION_ID = 'seanc-local.worktree-explorer';
 
 export interface PathCommandDependencies {
   readonly selection: { readonly snapshot: SelectionSnapshot };

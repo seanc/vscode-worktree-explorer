@@ -17,7 +17,7 @@ suite('Rename / Delete (#10) live', function () {
   let outputChannel: vscode.OutputChannel;
 
   suiteSetup(async () => {
-    await vscode.extensions.getExtension('worktree-explorer.worktree-explorer')?.activate();
+    await vscode.extensions.getExtension('seanc-local.worktree-explorer')?.activate();
     outputChannel = vscode.window.createOutputChannel('Worktree Explorer Test (#10)');
   });
 
