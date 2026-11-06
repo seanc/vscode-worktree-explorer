@@ -7,7 +7,7 @@ test/**
 out/**
 node_modules/**
 *.ts
-*.map
+**/*.map
 tsconfig.json
 eslint.config.js
 esbuild.js
@@ -16,4 +16,5 @@ esbuild.js
 .vscode-test.mjs
 .vscode-test.perf.mjs
 CLAUDE.md
+.claude/**
 PROJECT_LIFECYCLE_PROMPTS.md

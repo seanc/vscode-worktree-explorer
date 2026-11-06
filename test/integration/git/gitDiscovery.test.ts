@@ -56,7 +56,7 @@ suite('Live Git worktree discovery (#3 feasibility spike)', function () {
 
   test('§28.2 detached-worktree scenario: a detached worktree is discovered and flagged live', () => {
     const worktrees = gitIntegration.listWorktrees();
-    const detached = worktrees.find((w) => !w.isMain && w.ref !== 'feature/x');
+    const detached = worktrees.find((w) => !w.isMain && w.isDetached);
 
     assert.ok(detached, 'detached worktree should be discovered');
     assert.strictEqual(detached!.isDetached, true);

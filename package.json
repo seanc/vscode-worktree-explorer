@@ -8,7 +8,7 @@
   "icon": "resources/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bogdandobanda/vscode-worktree-explorer.git"
+    "url": "https://github.com/seanc/vscode-worktree-explorer.git"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -38,6 +38,13 @@
           "id": "worktreeExplorer.files",
           "name": "Worktree Explorer",
           "when": "worktreeExplorer.visible"
+        }
+      ],
+      "worktreeExplorerTickets": [
+        {
+          "type": "webview",
+          "id": "worktreeExplorer.tickets",
+          "name": "Tickets"
         }
       ]
     },
@@ -95,10 +102,127 @@
       {
         "command": "worktreeExplorer.openSettings",
         "title": "Worktree Explorer: Extension Settings"
+      },
+      {
+        "command": "worktreeExplorer.openTicketLink",
+        "title": "Worktree Explorer: Open Ticket in Browser",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "worktreeExplorer.openTicketNotes",
+        "title": "Worktree Explorer: Open Ticket Notes",
+        "icon": "$(note)"
+      },
+      {
+        "command": "worktreeExplorer.copyTestCommand",
+        "title": "Worktree Explorer: Copy Test Command",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "worktreeExplorer.chooseFilter",
+        "title": "Worktree Explorer: Show Changed Files…",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "worktreeExplorer.chooseFilterActive",
+        "title": "Worktree Explorer: Show Changed Files (filter on)…",
+        "icon": "$(filter-filled)"
+      },
+      {
+        "command": "worktreeExplorer.compareWithBase",
+        "title": "Worktree Explorer: Compare with Base Branch"
+      },
+      {
+        "command": "worktreeExplorer.compareWithMainCheckout",
+        "title": "Worktree Explorer: Compare with Main Checkout"
+      },
+      {
+        "command": "worktreeExplorer.openInMainCheckout",
+        "title": "Worktree Explorer: Open in Main Checkout"
+      },
+      {
+        "command": "worktreeExplorer.openWorktreeInNewWindow",
+        "title": "Worktree Explorer: Open Worktree in New Window",
+        "icon": "$(empty-window)"
+      },
+      {
+        "command": "worktreeExplorer.showInWorktreeExplorer",
+        "title": "Worktree Explorer: Show in Worktree Explorer",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "worktreeExplorer.copyCleanupCommand",
+        "title": "Worktree Explorer: Copy Cleanup Command"
+      },
+      {
+        "command": "worktreeExplorer.refreshTickets",
+        "title": "Worktree Explorer: Refresh Tickets",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "worktreeExplorer.openTicketOverview",
+        "title": "Worktree Explorer: Open Ticket Overview",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "worktreeExplorer.removeWorktree",
+        "title": "Worktree Explorer: Remove Worktree…"
+      },
+      {
+        "command": "worktreeExplorer.serveViaTunnel",
+        "title": "Worktree Explorer: Serve Through Tunnel…"
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "worktreeExplorer.chooseFilterActive",
+          "when": "false"
+        },
+        {
+          "command": "worktreeExplorer.compareWithBase",
+          "when": "false"
+        },
+        {
+          "command": "worktreeExplorer.compareWithMainCheckout",
+          "when": "false"
+        },
+        {
+          "command": "worktreeExplorer.openInMainCheckout",
+          "when": "false"
+        },
+        {
+          "command": "worktreeExplorer.openWorktreeInNewWindow",
+          "when": "false"
+        },
+        {
+          "command": "worktreeExplorer.showInWorktreeExplorer",
+          "when": "false"
+        },
+        {
+          "command": "worktreeExplorer.copyCleanupCommand",
+          "when": "false"
+        },
+        {
+          "command": "worktreeExplorer.removeWorktree",
+          "when": "false"
+        },
+        {
+          "command": "worktreeExplorer.serveViaTunnel",
+          "when": "false"
+        }
+      ],
       "view/title": [
+        {
+          "command": "worktreeExplorer.chooseFilter",
+          "when": "view == worktreeExplorer.files && !worktreeExplorer.filterActive",
+          "group": "navigation@3"
+        },
+        {
+          "command": "worktreeExplorer.chooseFilterActive",
+          "when": "view == worktreeExplorer.files && worktreeExplorer.filterActive",
+          "group": "navigation@3"
+        },
         {
           "command": "worktreeExplorer.selectWorktree",
           "when": "view == worktreeExplorer.files",
@@ -108,6 +232,21 @@
           "command": "worktreeExplorer.refresh",
           "when": "view == worktreeExplorer.files",
           "group": "navigation@2"
+        },
+        {
+          "command": "worktreeExplorer.openTicketLink",
+          "when": "view == worktreeExplorer.files && worktreeExplorer.activeTicketHasUrl",
+          "group": "navigation@0"
+        },
+        {
+          "command": "worktreeExplorer.openTicketNotes",
+          "when": "view == worktreeExplorer.files && worktreeExplorer.activeTicketHasNotes",
+          "group": "1_ticket@1"
+        },
+        {
+          "command": "worktreeExplorer.copyTestCommand",
+          "when": "view == worktreeExplorer.files && worktreeExplorer.activeTicketHasTestCommand",
+          "group": "1_ticket@2"
         },
         {
           "command": "worktreeExplorer.newFile",
@@ -133,6 +272,16 @@
           "command": "worktreeExplorer.openSettings",
           "when": "view == worktreeExplorer.files",
           "group": "3_worktree@3"
+        },
+        {
+          "command": "worktreeExplorer.refreshTickets",
+          "when": "view == worktreeExplorer.tickets",
+          "group": "navigation@1"
+        },
+        {
+          "command": "worktreeExplorer.openTicketOverview",
+          "when": "view == worktreeExplorer.files",
+          "group": "1_ticket@0"
         }
       ],
       "view/item/context": [
@@ -148,12 +297,12 @@
         },
         {
           "command": "worktreeExplorer.rename",
-          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted && viewItem =~ /^(file|folder|symlink)$/",
           "group": "2_modification@1"
         },
         {
           "command": "worktreeExplorer.delete",
-          "when": "view == worktreeExplorer.files && isWorkspaceTrusted",
+          "when": "view == worktreeExplorer.files && isWorkspaceTrusted && viewItem =~ /^(file|folder|symlink)$/",
           "group": "2_modification@2"
         },
         {
@@ -168,8 +317,23 @@
         },
         {
           "command": "worktreeExplorer.revealInOperatingSystem",
-          "when": "view == worktreeExplorer.files",
+          "when": "view == worktreeExplorer.files && viewItem =~ /^(file|folder|symlink)$/",
           "group": "3_paths@3"
+        },
+        {
+          "command": "worktreeExplorer.compareWithBase",
+          "when": "view == worktreeExplorer.files && viewItem =~ /^(file|deletedFile)$/",
+          "group": "0_compare@1"
+        },
+        {
+          "command": "worktreeExplorer.compareWithMainCheckout",
+          "when": "view == worktreeExplorer.files && viewItem == file",
+          "group": "0_compare@2"
+        },
+        {
+          "command": "worktreeExplorer.openInMainCheckout",
+          "when": "view == worktreeExplorer.files && viewItem == file",
+          "group": "0_compare@3"
         }
       ]
     },
@@ -216,8 +380,54 @@
           "type": "boolean",
           "default": true,
           "description": "Move deleted files and folders to the OS trash instead of deleting them permanently."
+        },
+        "worktreeExplorer.baseBranch": {
+          "type": "string",
+          "default": "",
+          "description": "Branch that worktrees are compared against. Leave empty to use the first of develop, main, or master that exists."
+        },
+        "worktreeExplorer.ticket.keyPattern": {
+          "type": "string",
+          "default": "[A-Z][A-Z0-9]+-\\d+",
+          "description": "Regular expression for a ticket key, matched against the worktree's branch name and then its folder name."
+        },
+        "worktreeExplorer.ticket.urlTemplate": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Ticket link with a `{key}` placeholder, for example `https://your-site.atlassian.net/browse/{key}`. Used when the notes file has no valid link. Must use https."
+        },
+        "worktreeExplorer.ticket.notesFile": {
+          "type": "string",
+          "default": "CLAUDE.local.md",
+          "description": "File name in the worktree root to read ticket details from (summary, link, databases, test command). A bare file name only."
+        },
+        "worktreeExplorer.ticket.cleanupCommand": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Command to copy from a ticket's **Copy Cleanup Command** action, with a `{key}` placeholder (for example a script that drops the ticket's local databases). The extension only copies it; it never runs it."
+        },
+        "worktreeExplorer.tunnel.serveCommand": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "markdownDescription": "Command that points your tunnel at a checkout, with a `{target}` placeholder (the ticket key, or `main` for the main checkout) — for example `tiggit serve {target}`. When set, ticket cards show **Serve via tunnel**; it asks for confirmation and runs the command in a new terminal. User settings only."
+        },
+        "worktreeExplorer.tunnel.siteLink": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "markdownDescription": "Path to the symlink whose target is the checkout the tunnel serves (for example a Herd site link under `~/Library/Application Support/Herd/config/valet/Sites/`). Used to show which ticket is served and to hide its Serve button. User settings only."
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "worktreeExplorerTickets",
+          "title": "Tickets",
+          "icon": "resources/tickets.svg"
+        }
+      ]
     }
   },
   "scripts": {
@@ -233,7 +443,7 @@
     "pretest": "npm run pretest:fixtures && npm run compile-tests && npm run compile",
     "profile": "node test/setup/createLargeFixture.js && npm run compile-tests && vscode-test --config .vscode-test.perf.mjs",
     "check-types": "tsc --noEmit",
-    "lint": "eslint src test",
+    "lint": "eslint src test media",
     "test": "vscode-test",
     "vsix": "vsce package"
   },

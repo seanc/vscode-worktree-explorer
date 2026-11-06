@@ -17,3 +17,29 @@ export interface WorktreeDescriptor {
   readonly isMain: boolean;
   readonly isDetached: boolean;
 }
+
+/** #18: a file's change status, normalized from the Git API so no other module needs its types. */
+export type ChangeStatus = 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked' | 'conflict';
+
+export interface WorktreeChange {
+  readonly uri: Uri;
+  readonly status: ChangeStatus;
+}
+
+/** #18: how a linked worktree differs from its base branch, measured from the merge base. */
+export interface BaseComparison {
+  /** The base branch name, e.g. "develop", "origin/develop", or another feature branch. */
+  readonly baseRef: string;
+  /** #23: where baseRef came from — the branch this one was created from (Git's reflog), the
+   *  worktreeExplorer.baseBranch setting, or the develop/main/master default. */
+  readonly baseSource: 'created-from' | 'setting' | 'default';
+  readonly mergeBase: string;
+  /** Commits in mergeBase..HEAD. */
+  readonly ahead: number;
+  /** Committed and uncommitted changes since the merge base, plus untracked files. */
+  readonly changedVsBase: readonly WorktreeChange[];
+  /** Staged, unstaged, conflicted, and untracked changes only. */
+  readonly uncommitted: readonly WorktreeChange[];
+  /** #24: messages of commits on the base since the merge base (newest first, capped). */
+  readonly baseCommitMessages: readonly string[];
+}

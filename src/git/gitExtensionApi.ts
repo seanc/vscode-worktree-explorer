@@ -22,6 +22,8 @@ export interface API {
   readonly onDidOpenRepository: Event<Repository>;
   readonly onDidCloseRepository: Event<Repository>;
   openRepository(root: Uri): Promise<Repository | null>;
+  /** #18: a `git:` URI for `uri` at `ref`, for opening the base version in a diff editor. */
+  toGitUri(uri: Uri, ref: string): Uri;
 }
 
 export type RepositoryKind = 'repository' | 'submodule' | 'worktree';
@@ -31,13 +33,69 @@ export interface Repository {
   readonly state: RepositoryState;
   readonly ui: RepositoryUIState;
   readonly kind: RepositoryKind;
+  // #18: base-branch comparison. Read-only queries only — nothing here mutates the repository.
+  getBranch(name: string): Promise<Branch>;
+  getMergeBase(ref1: string, ref2: string): Promise<string | undefined>;
+  /** Changes between `ref` and the working tree (committed and uncommitted; not untracked). */
+  diffWith(ref: string): Promise<Change[]>;
+  log(options?: LogOptions): Promise<Commit[]>;
+  /** User-confirmed worktree removal (`git worktree remove <path>`, never `--force` here). Optional:
+   *  older VS Code versions don't expose it. */
+  deleteWorktree?(path: string, options?: { force?: boolean }): Promise<void>;
 }
 
 export interface RepositoryState {
   readonly HEAD: Branch | undefined;
   /** Full `git worktree list` inventory known to this (main) repository. */
   readonly worktrees: Worktree[];
+  readonly mergeChanges: Change[];
+  readonly indexChanges: Change[];
+  readonly workingTreeChanges: Change[];
+  /** Populated only when the user's `git.untrackedChanges` setting is "separate". */
+  readonly untrackedChanges: Change[];
   readonly onDidChange: Event<void>;
+}
+
+/** Numeric values match the Git extension's `Status` const enum, which is not importable at
+ *  runtime — order matters. */
+export enum Status {
+  INDEX_MODIFIED,
+  INDEX_ADDED,
+  INDEX_DELETED,
+  INDEX_RENAMED,
+  INDEX_COPIED,
+  MODIFIED,
+  DELETED,
+  UNTRACKED,
+  IGNORED,
+  INTENT_TO_ADD,
+  INTENT_TO_RENAME,
+  TYPE_CHANGED,
+  ADDED_BY_US,
+  ADDED_BY_THEM,
+  DELETED_BY_US,
+  DELETED_BY_THEM,
+  BOTH_ADDED,
+  BOTH_DELETED,
+  BOTH_MODIFIED
+}
+
+export interface Change {
+  readonly uri: Uri;
+  readonly originalUri: Uri;
+  readonly renameUri: Uri | undefined;
+  readonly status: Status;
+}
+
+export interface LogOptions {
+  readonly maxEntries?: number;
+  /** A commit range, such as "<sha>..HEAD". */
+  readonly range?: string;
+}
+
+export interface Commit {
+  readonly hash: string;
+  readonly message: string;
 }
 
 export interface RepositoryUIState {

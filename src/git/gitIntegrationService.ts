@@ -1,8 +1,25 @@
 import * as vscode from 'vscode';
 import type { API, GitExtension, Repository } from './gitExtensionApi';
-import type { WorktreeDescriptor } from '../common/types';
+import type { BaseComparison, WorktreeChange, WorktreeDescriptor } from '../common/types';
 import { listWorktreeDescriptors } from './worktreeNormalization';
+import { compareRepositoryWithBase, readBaseBranchSetting, readBranchOrigin, uncommittedChanges } from './baseComparison';
 import { pathsEqual } from '../common/paths';
+
+export type GitErrorReporter = (context: string, error: unknown) => void;
+
+/** A short, user-facing reason for a failed worktree removal (Git's own stderr where available). */
+export function describeGitFailure(error: unknown): string {
+  const details = error as { gitErrorCode?: string; stderr?: string; message?: string } | undefined;
+  const stderr = (details?.stderr ?? details?.message ?? '').toLowerCase();
+  if (details?.gitErrorCode === 'WorktreeContainsChanges' || stderr.includes('modified or untracked')) {
+    return 'The worktree has uncommitted or untracked files. Commit, stash, or delete them first.';
+  }
+  if (stderr.includes('locked')) {
+    return 'The worktree is locked. Unlock it with "git worktree unlock" first.';
+  }
+  const firstLine = (details?.stderr ?? details?.message ?? '').split('\n').find((line) => line.trim().length > 0);
+  return firstLine ? `Git could not remove the worktree: ${firstLine.trim().slice(0, 200)}` : 'Git could not remove the worktree.';
+}
 
 const GIT_EXTENSION_ID = 'vscode.git';
 
@@ -15,6 +32,19 @@ export class GitIntegrationService implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
   private readonly repositoryDisposables = new Map<Repository, vscode.Disposable[]>();
   private api: API | undefined;
+  /** #18: per-worktree comparison, keyed by root URI; dropped when that repository's state changes. */
+  private readonly comparisonCache = new Map<string, Promise<BaseComparison | undefined>>();
+
+  constructor(private readonly reportError: GitErrorReporter = () => undefined) {
+    this.disposables.push(
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration('worktreeExplorer.baseBranch')) {
+          this.comparisonCache.clear();
+          this._onDidChangeWorktrees.fire();
+        }
+      })
+    );
+  }
 
   private readonly _onDidChangeAvailability = new vscode.EventEmitter<boolean>();
   /** Fires when the built-in Git extension becomes available/unavailable (installed and enabled). */
@@ -60,6 +90,73 @@ export class GitIntegrationService implements vscode.Disposable {
     return this.api?.repositories.some((repository) => repository.rootUri.toString() === key && repository.ui.selected) ?? false;
   }
 
+  /**
+   * #18/#23: how the worktree at `rootUri` differs from its base branch (the branch it was created
+   * from, else worktreeExplorer.baseBranch, else develop/main/master), measured from the merge
+   * base. Undefined when Git is unavailable, the
+   * repository isn't open, there is no base branch, or a Git query fails (reported, not thrown).
+   */
+  compareWithBase(rootUri: vscode.Uri): Promise<BaseComparison | undefined> {
+    const key = rootUri.toString();
+    const repository = this.api?.repositories.find((r) => r.rootUri.toString() === key);
+    if (!repository) {
+      return Promise.resolve(undefined);
+    }
+    const cached = this.comparisonCache.get(key);
+    if (cached) {
+      return cached;
+    }
+    // #23: prefer the branch this one was created from, per Git's reflog in the owning repository.
+    const repositoryRoot = this.listWorktrees().find((w) => w.rootUri.toString() === key)?.repositoryRoot ?? rootUri;
+    const pending = readBranchOrigin(repositoryRoot, repository.state.HEAD?.name)
+      .then((createdFrom) => compareRepositoryWithBase(repository, readBaseBranchSetting(), createdFrom))
+      .catch((error: unknown) => {
+      this.comparisonCache.delete(key);
+      this.reportError('compare with base branch', error);
+      return undefined;
+    });
+    this.comparisonCache.set(key, pending);
+    return pending;
+  }
+
+  /** #20: staged, unstaged, conflicted, and untracked changes, from the Git extension's own
+   *  status — no base branch needed. Undefined when the repository isn't open. */
+  listUncommittedChanges(rootUri: vscode.Uri): WorktreeChange[] | undefined {
+    const key = rootUri.toString();
+    const repository = this.api?.repositories.find((r) => r.rootUri.toString() === key);
+    return repository ? uncommittedChanges(repository) : undefined;
+  }
+
+  /**
+   * Removes a linked worktree through the built-in Git extension (`git worktree remove`, never
+   * forced, so Git itself refuses one with uncommitted or untracked files, or a locked one). The
+   * main checkout can never be removed. The branch is kept. Throws with a user-facing message.
+   */
+  async removeWorktree(rootUri: vscode.Uri): Promise<void> {
+    const key = rootUri.toString();
+    const worktree = this.listWorktrees().find((w) => w.rootUri.toString() === key);
+    if (!worktree || worktree.isMain) {
+      throw new Error('Only a linked worktree can be removed.');
+    }
+    const owner = this.api?.repositories.find((r) => r.kind === 'repository' && r.rootUri.toString() === worktree.repositoryRoot.toString());
+    if (!owner?.deleteWorktree) {
+      throw new Error("This version of VS Code's Git extension can't remove worktrees.");
+    }
+    try {
+      await owner.deleteWorktree(rootUri.fsPath);
+    } catch (error) {
+      this.reportError('remove worktree', error);
+      throw new Error(describeGitFailure(error));
+    }
+    this.comparisonCache.delete(key);
+    this._onDidChangeWorktrees.fire();
+  }
+
+  /** #21: a URI for `uri`'s content at `ref`, for the left side of a diff editor. */
+  toGitUri(uri: vscode.Uri, ref: string): vscode.Uri | undefined {
+    return this.api?.toGitUri(uri, ref);
+  }
+
   private setApi(api: API | undefined): void {
     if (this.api === api) {
       return;
@@ -94,6 +191,7 @@ export class GitIntegrationService implements vscode.Disposable {
     this.repositoryDisposables.set(repository, [
       repository.ui.onDidChange(() => this._onDidChangeRepositorySelection.fire()),
       repository.state.onDidChange(() => {
+        this.comparisonCache.delete(repository.rootUri.toString());
         this._onDidChangeWorktrees.fire();
         if (repository.kind === 'repository') {
           this.openMissingWorktrees(repository);
@@ -129,11 +227,13 @@ export class GitIntegrationService implements vscode.Disposable {
   }
 
   private untrackRepository(repository: Repository): void {
+    this.comparisonCache.delete(repository.rootUri.toString());
     this.repositoryDisposables.get(repository)?.forEach((d) => d.dispose());
     this.repositoryDisposables.delete(repository);
   }
 
   private clearRepositoryListeners(): void {
+    this.comparisonCache.clear();
     for (const disposables of this.repositoryDisposables.values()) {
       disposables.forEach((d) => d.dispose());
     }

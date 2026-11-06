@@ -63,3 +63,18 @@ This file contains GitHub-ready issue bodies grouped into implementation milesto
 ## Milestone 4 — Release
 
 - [#16 — Prepare documentation, VSIX packaging, and Marketplace release](issues/016-prepare-documentation,-vsix-packaging,-and-marketplace-release.md)
+## Milestone 5 — Ticket workflow
+
+Ticket-aware browsing for one-worktree-per-ticket workflows, with no network access beyond opening a
+validated ticket link. Jira status, running commands, and cleanup actions are out of scope.
+
+- [#17 — Add the ticket metadata service](issues/017-add-the-ticket-metadata-service.md)
+- [#18 — Compare worktrees against their base branch](issues/018-compare-worktrees-against-their-base-branch.md)
+- [#19 — Show ticket context in the Worktree Explorer](issues/019-show-ticket-context-in-the-worktree-explorer.md)
+- [#20 — Add a changed-files filter](issues/020-add-a-changed-files-filter.md)
+- [#21 — Add compare commands](issues/021-add-compare-commands.md)
+- [#22 — Add the Tickets view](issues/022-add-the-tickets-view.md)
+- [#23 — Detect each branch's real base](issues/023-detect-each-branchs-real-base.md)
+- [#24 — Detect tickets ready to clean up](issues/024-detect-tickets-ready-to-clean-up.md)
+- [#25 — Design-A Tickets sidebar and ticket overview](issues/025-design-a-tickets-sidebar-and-overview.md)
+- [#26 — Serve a checkout through the tunnel](issues/026-serve-a-checkout-through-the-tunnel.md)

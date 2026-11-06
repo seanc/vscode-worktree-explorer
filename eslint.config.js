@@ -23,6 +23,22 @@ module.exports = tseslint.config(
     }
   },
   {
+    // #25: plain browser scripts for the ticket webviews (no build step, no dependencies).
+    files: ['media/**/*.js'],
+    languageOptions: { sourceType: 'script' },
+    rules: {
+      curly: 'warn',
+      eqeqeq: 'warn',
+      'no-restricted-properties': [
+        'error',
+        { property: 'innerHTML', message: 'Webview content is built with textContent only.' },
+        { property: 'outerHTML', message: 'Webview content is built with textContent only.' },
+        { property: 'insertAdjacentHTML', message: 'Webview content is built with textContent only.' }
+      ],
+      'no-restricted-globals': ['error', 'eval', 'fetch', 'XMLHttpRequest', 'WebSocket']
+    }
+  },
+  {
     ignores: ['dist/**', 'out/**', '.vscode-test/**', 'esbuild.js', 'test/setup/**']
   }
 );

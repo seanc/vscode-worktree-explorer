@@ -6,6 +6,29 @@
   regardless of what's currently selected in Source Control. Selecting the main repository no
   longer hides the view — it keeps showing the most recently active worktree (SCM, manual pick, or
   restored session), defaulting to the first discovered worktree if none has been active yet.
+- Ticket workflow (Milestone 5, #17–#22), all local with no tracker API:
+  - Ticket key from the branch or folder name; summary, link, databases, and test command from an
+    optional notes file (`CLAUDE.local.md` by default), parsed defensively with validated links.
+  - Ahead count and changed files against the base branch, measured from the merge base.
+  - Worktree Explorer header `KEY · ↑N vs base` with the ticket summary; Open Ticket in Browser,
+    Open Ticket Notes, and Copy Test Command.
+  - Filter: all files, changed against the base branch, or uncommitted only.
+  - Compare with Base Branch, Compare with Main Checkout, and Open in Main Checkout.
+  - A Tickets view listing every linked worktree, with Show in Worktree Explorer, Open in New
+    Window, and Copy Cleanup Command (clipboard only).
+  - New settings: `baseBranch`, `ticket.keyPattern`, `ticket.urlTemplate`, `ticket.notesFile`,
+    `ticket.cleanupCommand`.
+  - #23: stacked branches compare against the branch they were created from (read from Git's
+    reflog), falling back to the base branch setting or develop/main/master.
+  - #24: Ready to clean up: tickets whose key appears in a commit on their base branch since the
+    split, with a copy-only cleanup command and a confirmed Remove Worktree action (never forced).
+  - #25: the Tickets view is now the design-A card sidebar (a webview), plus a ticket overview
+    tab. Strict CSP, text-only rendering, and validated messages; this replaces the #22 tree.
+    Cards show the main checkout first, compact buttons, and dev/test databases when expanded.
+  - #26: optional tunnel support: a "● Tunnel" badge on the served checkout (from a configured
+    site link) and a confirmed **Serve via tunnel** button that runs your configured serve command
+    in a visible terminal. Settings `tunnel.siteLink` and `tunnel.serveCommand` are user-level only.
+- Source maps in nested folders are now excluded from the VSIX.
 
 ## 0.1.0
 

@@ -25,6 +25,14 @@ export {
   registerOpenSettingsCommand
 } from './pathCommands';
 export type { PathCommandDependencies } from './pathCommands';
+export { openTicketLink, openTicketNotes, copyTestCommand, registerTicketCommands } from './ticketCommands';
+export type { TicketCommandDependencies, TicketTarget } from './ticketCommands';
+export { chooseFilter, registerFilterCommands, filterModeLabel } from './filterCommands';
+export type { FilterCommandDependencies } from './filterCommands';
+export { compareWithBase, openBaseDiff, compareWithMainCheckout, openInMainCheckout, mapToMainCheckout, registerCompareCommands } from './compareCommands';
+export type { CompareCommandDependencies } from './compareCommands';
+export { buildCleanupCommand, openWorktreeInNewWindow, showInWorktreeExplorer, copyCleanupCommand, removeWorktree, describeRemoval, registerTicketsViewCommands } from './ticketsViewCommands';
+export type { TicketsViewCommandDependencies, RemoveWorktreeDependencies } from './ticketsViewCommands';
 export {
   SELECT_WORKTREE_COMMAND,
   OPEN_COMMAND,
@@ -38,5 +46,8 @@ export {
   REVEAL_IN_OS_COMMAND,
   COPY_WORKTREE_PATH_COMMAND,
   REVEAL_WORKTREE_ROOT_COMMAND,
-  OPEN_SETTINGS_COMMAND
+  OPEN_SETTINGS_COMMAND,
+  OPEN_TICKET_LINK_COMMAND,
+  OPEN_TICKET_NOTES_COMMAND,
+  COPY_TEST_COMMAND_COMMAND
 } from './constants';

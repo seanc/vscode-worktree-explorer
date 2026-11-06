@@ -1,6 +1,9 @@
 export { WorktreeTreeProvider } from './worktreeTreeProvider';
+export type { ChangeSource } from './worktreeTreeProvider';
 export { WorktreeTreeItem } from './worktreeTreeItem';
-export type { TreeItemType } from './worktreeTreeItem';
+export type { TreeItemType, TreeItemChange } from './worktreeTreeItem';
+export { buildChangeTree, isFilterMode, statusLetter, statusLabel, FILTER_MODES } from './changeTree';
+export type { FilterMode, ChangeNode, ChangeTree } from './changeTree';
 export { describeActiveWorktree } from './activeWorktreeDescription';
 export { sortEntries } from './sorting';
 export type { SortOrder } from './sorting';
